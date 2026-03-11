@@ -1,62 +1,88 @@
 cmake_minimum_required(VERSION 3.20)
-
-set(CMAKE_EXPORT_COMPILE_COMMANDS on)
-
-project(rpg_game C)
+project(IvyRPG C)
 
 set(CMAKE_C_STANDARD 99)
+set(CMAKE_C_STANDARD_REQUIRED ON)
 
-link_directories(${CMAKE_CURRENT_SOURCE_DIR}/lib)
-set(CMAKE_BUILD_RPATH ${CMAKE_CURRENT_SOURCE_DIR}/lib)
-set(CMAKE_INSTALL_RPATH ${CMAKE_CURRENT_SOURCE_DIR}/lib)
+set(LIB_DIR     ${CMAKE_CURRENT_SOURCE_DIR}/lib)
+set(INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
+set(ASSETS_SRC  ${CMAKE_CURRENT_SOURCE_DIR}/assets)
+set(ASSETS_DEST $<TARGET_FILE_DIR:${PROJECT_NAME}>/assets)
 
-include_directories(include)
+include_directories(${INCLUDE_DIR})
+link_directories(${LIB_DIR})
 
-set(SOURCES
-        src/main.c
-        src/utils.c
+if(WIN32)
+    set(RAYLIB_LIB   ${LIB_DIR}/raylib.dll)
+    set(PLATFORM_LIBS winmm gdi32)
+else()
+    set(RAYLIB_LIB   ${LIB_DIR}/libraylib.so)
+    set(PLATFORM_LIBS m pthread dl)
+    set(CMAKE_BUILD_RPATH   "$ORIGIN/lib")
+    set(CMAKE_INSTALL_RPATH "$ORIGIN/lib")
+endif()
+
+macro(ivy_add_library TARGET_NAME)
+    add_library(${TARGET_NAME} STATIC ${ARGN})
+    target_include_directories(${TARGET_NAME} PUBLIC ${INCLUDE_DIR})
+    target_link_libraries(${TARGET_NAME} PUBLIC ${RAYLIB_LIB})
+endmacro()
+
+ivy_add_library(ivy_tilemap
         src/tilemap/tilemap.c
         src/tilemap/tilemap_internal.c
-        src/tilemap/autotiles/border.c
-        src/tilemap/autotiles/wall.c
-        src/tilemap/autotiles/carpet.c
-        src/tilemap/autotiles/table.c
-        # src/player.c
-        # src/game.c
-        # src/tilemap.c
-        # src/camera.c
-        # src/collision.c
-        # src/item.c
-        # src/screens/title.c
-        # src/screens/gameplay.c
-        # src/screens/options.c
+        src/tilemap/autotile/border.c
+        src/tilemap/autotile/carpet.c
+        src/tilemap/autotile/table.c
+        src/tilemap/autotile/wall.c
 )
 
-add_executable(rpg ${SOURCES})
+ivy_add_library(ivy_player
+        src/player/player.c
+        src/player/player_internal.c
+        src/player/portrait.c
+)
+target_link_libraries(ivy_player PUBLIC ivy_tilemap)
+
+ivy_add_library(ivy_scene
+        src/scenes/scenes.c
+        src/scenes/scene_title.c
+        src/scenes/scene_gameplay.c
+        src/scenes/scene_options.c
+)
+target_link_libraries(ivy_scene PUBLIC ivy_player)
+
+add_executable(${PROJECT_NAME}
+        src/main.c
+        src/game.c
+        src/virtual.c
+        src/utils.c
+        src/camera.c
+        src/collision.c
+        src/item.c
+        src/inventory.c
+        src/inventory_ui.c
+)
+
+target_link_libraries(${PROJECT_NAME} PRIVATE ivy_scene ${PLATFORM_LIBS})
+
 if(WIN32)
-    target_link_libraries(rpg raylib)
+    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            ${LIB_DIR}/raylib.dll
+            $<TARGET_FILE_DIR:${PROJECT_NAME}>
+    )
 else()
-    target_link_libraries(rpg raylib m)
+    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            ${LIB_DIR}/libraylib.so
+            $<TARGET_FILE_DIR:${PROJECT_NAME}>
+    )
 endif()
 
-set_target_properties(rpg PROPERTIES
-        BUILD_WITH_INSTALL_RPATH TRUE
-        INSTALL_RPATH "${CMAKE_CURRENT_SOURCE_DIR}/lib"
-)
-
-if(WIN32)
-    add_custom_command(TARGET rpg POST_BUILD
+add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_directory
-        "${CMAKE_CURRENT_SOURCE_DIR}/lib"
-        $<TARGET_FILE_DIR:rpg>
-        COMMENT "Copying all libraries to build directory")
-    
-    set_target_properties(rpg PROPERTIES
-        VS_DEBUGLER_WORKING_DIRECTORY $<TARGET_FILE_DIR:rpg>)
-endif()
-
-add_custom_command(TARGET rpg POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_directory
-        "${CMAKE_CURRENT_SOURCE_DIR}/assets"
-        "$<TARGET_FILE_DIR:rpg>/assets"
+        ${ASSETS_SRC}
+        ${ASSETS_DEST}
+        COMMENT "Copying assets..."
 )
