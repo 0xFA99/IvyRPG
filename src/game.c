@@ -1,73 +1,90 @@
-#include <stdio.h>
-#include <stdlib.h>
+#include "ivy/game.h"
+#include "ivy/utils.h"
+#include "ivy/scenes.h"
 
-#include "tilemap.h"
-#include "item.h"
-#include "game.h"
+#include <stddef.h>
 
-
-Texture2D LoadTextureFromBin(const char *fileName)
+Game GameInit(const u32 sw, const u32 sh)
 {
-    FILE *file = fopen(fileName, "rb");
-    if (!file) {
-        TraceLog(LOG_ERROR, "Failed to open binary file: %s", fileName);
-        return (Texture2D){0};
-    }
+    Game game = {0};
 
-    unsigned int size = 0;
-    if (fread(&size, sizeof(unsigned int), 1, file) != 1) {
-        fclose(file);
-        return (Texture2D){0};
-    }
+    game.screen.screenWidth  = sw;
+    game.screen.screenHeight = sh;
 
-    unsigned char *data = malloc(size);
-    if (!data) { fclose(file); return (Texture2D){0}; }
+    game.viewport = InitVirtualScreen(sw, sh);
+    SetTextureFilter(game.viewport.target.texture, TEXTURE_FILTER_POINT);
 
-    fread(data, 1, size, file);
-    fclose(file);
+    game.fonts[IVY_FONT_PRIMARY]   = LoadFontBin(PRIMARY_FONT_PATH, LOAD_FONT_SIZE);
+    game.fonts[IVY_FONT_SECONDARY] = LoadFontBin(SECONDARY_FONT_PATH, LOAD_FONT_SIZE);
 
-    const Image     img = LoadImageFromMemory(".png", data, (int)size);
-    const Texture2D tex = LoadTextureFromImage(img);
+    SetTextureFilter(game.fonts[IVY_FONT_PRIMARY].texture,   TEXTURE_FILTER_BILINEAR);
+    SetTextureFilter(game.fonts[IVY_FONT_SECONDARY].texture, TEXTURE_FILTER_BILINEAR);
 
-    UnloadImage(img);
-    free(data);
+    game.cursors[IVY_CURSOR_PRIMARY]   = LoadTextureFromImageBin(PRIMARY_CURSOR_PATH);
+    game.cursors[IVY_CURSOR_SECONDARY] = LoadTextureFromImageBin(SECONDARY_CURSOR_PATH);
 
-    return tex;
+    SetTextureFilter(game.cursors[IVY_CURSOR_PRIMARY],   TEXTURE_FILTER_POINT);
+    SetTextureFilter(game.cursors[IVY_CURSOR_SECONDARY], TEXTURE_FILTER_POINT);
+
+    SceneManager *sm = &game.sceneManager;
+    *sm = (SceneManager) {
+        .activeScene = (Scene){
+            .type      = SCENE_TITLE,
+            .data      = {NULL},
+            .Init      = SceneTitleInit,
+            .Update    = SceneTitleUpdate,
+            .DrawWorld = SceneTitleDrawWorld,
+            .RebuildTextures = SceneTitleRebuildTextures,
+            .DrawUI    = SceneTitleDrawUI,
+            .Unload    = SceneTitleUnload
+        },
+        .deltaTime    = 0.0f,
+        .sceneChanged = false,
+        .isRunning    = true
+    };
+
+    sm->activeScene.Init(&sm->activeScene);
+
+    return game;
 }
 
-void UpdateScreen(Screen *s)
+void GameUpdate(Game *game)
 {
-    if (s->data && s->Unload) {
-        s->Unload(s);
-        s->data = NULL;
+    if (IsWindowResized()) {
+        game->screen.screenWidth  = GetScreenWidth();
+        game->screen.screenHeight = GetScreenHeight();
+        UpdateVirtualResolution(&game->viewport,
+            game->screen.screenWidth, game->screen.screenHeight);
+        SetTextureFilter(game->viewport.target.texture, TEXTURE_FILTER_POINT);
     }
 
-    switch (s->type)
-    {
-        case SCREEN_TITLE: {
-            s->Init   = ScreenTitleInit;
-            s->Update = ScreenTitleUpdate;
-            s->Draw   = ScreenTitleDraw;
-            s->Unload = ScreenTitleUnload;
-        } break;
+    game->sceneManager.activeScene.Update(game);
 
-        case SCREEN_GAMEPLAY: {
-            s->Init   = ScreenGameplayInit;
-            s->Update = ScreenGameplayUpdate;
-            s->Draw   = ScreenGameplayDraw;
-            s->Unload = ScreenGameplayUnload;
-        } break;
+    if (game->sceneManager.sceneChanged)
+        UpdateScene(&game->sceneManager);
+}
 
-        case SCREEN_OPTIONS: {
-            s->Init   = ScreenOptionsInit;
-            s->Update = ScreenOptionsUpdate;
-            s->Draw   = ScreenOptionsDraw;
-            s->Unload = ScreenOptionsUnload;
-        } break;
+void GameDraw(Game *game)
+{
+    BeginTextureMode(game->viewport.target);
+        ClearBackground(BLACK);
+        game->sceneManager.activeScene.DrawWorld(game);
+    EndTextureMode();
 
-        default: break;
-    }
+    game->sceneManager.activeScene.RebuildTextures(game);
 
-    s->Init(s);
-    s->screenUpdated = false;
+    BeginDrawing();
+        ClearBackground(BLACK);
+        DrawVirtualResolution(&game->viewport);
+        game->sceneManager.activeScene.DrawUI(game);
+    EndDrawing();
+}
+
+void GameDestroy(const Game *game)
+{
+    UnloadFont(game->fonts[IVY_FONT_PRIMARY]);
+    UnloadFont(game->fonts[IVY_FONT_SECONDARY]);
+    UnloadTexture(game->cursors[IVY_CURSOR_PRIMARY]);
+    UnloadTexture(game->cursors[IVY_CURSOR_SECONDARY]);
+    UnloadRenderTexture(game->viewport.target);
 }
