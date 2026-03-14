@@ -12,44 +12,19 @@ void ReadExact(FILE *file, void *dest, const size_t n)
 
 u8 *ReadString(FILE *file)
 {
-    int len = 0;
+    u32 len = 0;
     ReadExact(file, &len, sizeof(u32));
 
-    u8 *buffer = malloc(len + 1);
-    assert(buffer && "[ERROR] Out of memory!");
+    u8 *str = malloc(len + 1);
+    assert(str && "[ERROR] Failed to allocate string buffer!");
 
-    ReadExact(file, buffer, len);
-    buffer[len] = '\0';
-    return buffer;
-}
-
-Texture2D LoadTextureFromBin(const char *path)
-{
-    printf("%s\n", path);
-    FILE *file = fopen(path, "rb");
-    assert(file && "[ERROR] Failed to open binary file!");
-
-    u32 size = 0;
-    assert(fread(&size, sizeof(u32), 1, file) == 1);
-
-    u8 *data = malloc(size);
-    assert(data && "[ERROR] Failed to allocate memory for tileset data!");
-
-    fread(data, 1, size, file);
-    fclose(file);
-
-    const Image img = LoadImageFromMemory(".png", data, (int)size);
-    const Texture2D tex = LoadTextureFromImage(img);
-
-    UnloadImage(img);
-    free(data);
-
-    return tex;
+    ReadExact(file, str, len);
+    str[len] = '\0';
+    return str;
 }
 
 Texture2D LoadTextureFromImageBin(const char *path)
 {
-    printf("%s\n", path);
     FILE *f = fopen(path, "rb");
     assert(f && "[ERROR] Failed to open binary file!");
 
