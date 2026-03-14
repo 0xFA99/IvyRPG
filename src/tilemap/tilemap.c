@@ -8,35 +8,38 @@
 Tilemap *LoadTilemapById(const u32 id)
 {
     char path[MAX_PATH_LEN] = {0};
-    snprintf(path, MAX_PATH_LEN, "%s/map_%d.bin", TILEMAP_ASSET_PATH, id);
+    snprintf(path, MAX_PATH_LEN, "%s/map_%u.bin", TILEMAP_ASSET_PATH, id);
 
     FILE *file = fopen(path, "rb");
-    assert(file && "[ERROR] Failed to open file!");
+    assert(file && "[ERROR] Failed to open tilemap file!");
 
     Tilemap *tilemap = malloc(sizeof(Tilemap));
-    assert(tilemap && "[ERROR] Failed to allocate memory tilemap!");
+    assert(tilemap && "[ERROR] Failed to allocate tilemap!");
 
-    TM_LoadHeader(file, tilemap);
-    TM_LoadTilesets(file, tilemap);
-    TM_LoadLayers(file, tilemap);
-    TM_FindMaxGid(tilemap);
-    TM_ReloadCanva(tilemap);
+    TM_LoadHeader       (file, tilemap);
+    TM_LoadTilesets     (file, tilemap);
+    TM_LoadLayers       (file, tilemap);
+    TM_LoadLookupTables (file, tilemap);
 
     fclose(file);
+
+    TM_BuildDrawInfoTable(tilemap);
+    TM_ReloadCanva(tilemap);
+
     return tilemap;
 }
 
 void DrawTilemapFromCanva(const Tilemap *tilemap)
 {
-    assert(tilemap && "[ERROR] Tilemap not found!");
+    assert(tilemap && "[ERROR] Tilemap is NULL!");
 
-    const float canvaW = (float)tilemap->canva.texture.width;
-    const float canvaH = (float)tilemap->canva.texture.height;
+    const float w = (float)tilemap->canva.texture.width;
+    const float h = (float)tilemap->canva.texture.height;
 
-    const Rectangle src = { 0.0f, 0.0f, canvaW, -canvaH };
-    const Rectangle dst = { 0.0f, 0.0f, canvaW,  canvaH  };
+    const Rectangle src = { 0.0f, 0.0f,  w, -h };
+    const Rectangle dst = { 0.0f, 0.0f,  w,  h };
 
-    DrawTexturePro(tilemap->canva.texture, src, dst, (Vector2){0}, 0.0f, WHITE);
+    DrawTexturePro(tilemap->canva.texture, src, dst, (Vector2){ 0 }, 0.0f, WHITE);
 }
 
 void UnloadTilemap(Tilemap *tilemap)
@@ -49,7 +52,6 @@ void UnloadTilemap(Tilemap *tilemap)
         for (u32 i = 0; i < tilemap->header.tilesetCount; i++) {
             UnloadTexture(tilemap->tilesets[i].texture);
             free(tilemap->tilesets[i].texturePath);
-            free(tilemap->tilesets[i].properties);
         }
         free(tilemap->tilesets);
     }
