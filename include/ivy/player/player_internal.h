@@ -10,15 +10,14 @@
 #define WALK_SPEED_MULTIPLIER   1.0f
 #define DIR_INPUT_DELAY         6
 
-// Attack config
-#define ATTACK_ANIM_SPEED       0.08f   // Durasi per frame animasi attack (detik)
-#define ATTACK_ANIM_START_COL   6       // Kolom mulai frame attack di spritesheet
-#define ATTACK_ANIM_FRAMES      3       // Jumlah frame attack (col 6,7,8)
-#define ATTACK_HIT_FRAME        1       // Frame ke-berapa hitbox aktif (0-based)
-#define ATTACK_HITBOX_W         24.0f   // Lebar hitbox serangan
-#define ATTACK_HITBOX_H         20.0f   // Tinggi hitbox serangan
-#define ATTACK_HITBOX_REACH     20.0f   // Jarak hitbox dari pusat player
-#define ATTACK_COOLDOWN         0.4f    // Cooldown setelah animasi selesai (detik)
+#define ATTACK_ANIM_SPEED       0.08f
+#define ATTACK_ANIM_START_COL   6
+#define ATTACK_ANIM_FRAMES      3
+#define ATTACK_HIT_FRAME        1
+#define ATTACK_HITBOX_W         24.0f
+#define ATTACK_HITBOX_H         20.0f
+#define ATTACK_HITBOX_REACH     20.0f
+#define ATTACK_COOLDOWN         0.4f
 
 typedef struct Player Player;
 
@@ -73,16 +72,15 @@ typedef struct {
     u32     currentFrame;
     u32     frameDirection;
 
-    // Attack animation state
     float   attackFrameTimer;
-    u32     attackFrame;        // Frame saat ini dalam animasi attack (0..ATTACK_ANIM_FRAMES-1)
-    bool    attackHitApplied;   // Sudah apply hit di frame ini?
-    float   attackCooldown;     // Sisa waktu cooldown sebelum bisa attack lagi
+    u32     attackFrame;
+    bool    attackHitApplied;
+    float   attackCooldown;
 } PlayerAnimation;
 
 
 u32     GetSpriteRow(const Player *player);
-u32     GetSpriteCol(const Player *player);         // Baru: kolom sprite (handle attack col offset)
+u32     GetSpriteCol(const Player *player);
 float   GetMoveDuration(PlayerAction action);
 
 bool    GetMovementInput(Vector2 *outDir, Direction *outFacing);
@@ -94,6 +92,6 @@ void    UpdatePlayerMovement(Player *player, float frameTime, const Collision *c
 void    UpdateAnimation(Player *player, float frameTime);
 void    UpdateAttack(Player *player, float frameTime, const Collision *collision);
 
-Rectangle GetAttackHitbox(const Player *player);    // Baru: hitbox area serangan
+Rectangle GetAttackHitbox(const Player *player);
 
 #endif

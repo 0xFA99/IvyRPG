@@ -4,23 +4,12 @@
 #include <assert.h>
 #include <stdlib.h>
 
-/* -------------------------------------------------------------------------
- * Internal types
- * ---------------------------------------------------------------------- */
 
 typedef struct {
     int x, y, w, h;
 } RectInfo;
 
-/*
- * Max rects per map. A 19x18 map has 342 tiles max -- 512 is generous.
- * Increase if you have larger maps.
- */
 #define MAX_COLLISION_RECTS 512
-
-/* -------------------------------------------------------------------------
- * IsSolidTile
- * ---------------------------------------------------------------------- */
 
 static bool IsSolidTile(const Tilemap *tilemap, const int layerIndex,
                          const int x, const int y)
@@ -36,16 +25,6 @@ static bool IsSolidTile(const Tilemap *tilemap, const int layerIndex,
            type == TILE_COLLISION ||
            type == TILE_TABLE;
 }
-
-/* -------------------------------------------------------------------------
- * ComputeCollisionRects
- *
- * Greedy rect-merge: scans left-to-right, top-to-bottom.
- * For each unvisited solid tile, expands a rect as wide as possible,
- * then as tall as possible (all rows must be full-width solid).
- *
- * Returns number of rects written into outBuf.
- * ---------------------------------------------------------------------- */
 
 static int ComputeCollisionRects(const Tilemap *tilemap, const int layerIndex,
                                   RectInfo *outBuf, const int maxRects)
@@ -66,7 +45,6 @@ static int ComputeCollisionRects(const Tilemap *tilemap, const int layerIndex,
             if (visited[y * w + x] || !IsSolidTile(tilemap, layerIndex, x, y))
                 continue;
 
-            /* Expand right */
             int rw = 1;
             while (x + rw < w &&
                    !visited[y * w + (x + rw)] &&
@@ -75,7 +53,6 @@ static int ComputeCollisionRects(const Tilemap *tilemap, const int layerIndex,
                 rw++;
             }
 
-            /* Expand down -- every cell in the row must be solid & unvisited */
             int rh = 1;
             while (y + rh < h)
             {
@@ -92,7 +69,6 @@ static int ComputeCollisionRects(const Tilemap *tilemap, const int layerIndex,
                 rh++;
             }
 
-            /* Mark all cells in rect as visited */
             for (int row = 0; row < rh; row++)
                 for (int col = 0; col < rw; col++)
                     visited[(y + row) * w + (x + col)] = true;
@@ -106,15 +82,10 @@ static int ComputeCollisionRects(const Tilemap *tilemap, const int layerIndex,
     return rectCount;
 }
 
-/* -------------------------------------------------------------------------
- * InitCollisionAllLayers
- * ---------------------------------------------------------------------- */
-
 Collision *InitCollisionAllLayers(const Tilemap *tilemap)
 {
     assert(tilemap && "[ERROR] Tilemap is NULL!");
 
-    /* Temporary heap buffer -- large enough for all layers combined */
     RectInfo *tmpRects = malloc(MAX_COLLISION_RECTS * sizeof(RectInfo));
     assert(tmpRects && "[ERROR] Failed to allocate temp rect buffer!");
 
@@ -164,10 +135,6 @@ Collision *InitCollisionAllLayers(const Tilemap *tilemap)
     free(tmpRects);
     return collision;
 }
-
-/* -------------------------------------------------------------------------
- * DestroyCollision
- * ---------------------------------------------------------------------- */
 
 void DestroyCollision(Collision *collision)
 {

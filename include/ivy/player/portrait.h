@@ -1,7 +1,7 @@
 #ifndef IVY_PORTRAIT_H
 #define IVY_PORTRAIT_H
 
-#include "../inventory/inventory.h"
+#include "ivy/inventory/inventory.h"
 #include "ivy/player/player_internal.h"
 #include "ivy/virtual.h"
 #include "raylib/raylib.h"

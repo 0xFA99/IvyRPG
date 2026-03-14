@@ -5,7 +5,8 @@
 #include "ivy/camera.h"
 #include "ivy/collision.h"
 #include "ivy/item.h"
-#include "inventory/inventory_ui.h"
+#include "ivy/inventory/inventory_ui.h"
+
 #include "raylib/raylib.h"
 
 typedef struct Game     Game;

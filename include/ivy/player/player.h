@@ -3,7 +3,7 @@
 
 #include "ivy/virtual.h"
 #include "ivy/collision.h"
-#include "../inventory/inventory.h"
+#include "ivy/inventory/inventory.h"
 #include "ivy/player/portrait.h"
 #include "ivy/player/player_internal.h"
 
