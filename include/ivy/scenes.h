@@ -5,7 +5,7 @@
 #include "ivy/camera.h"
 #include "ivy/collision.h"
 #include "ivy/item.h"
-#include "ivy/inventory_ui.h"
+#include "inventory/inventory_ui.h"
 #include "raylib/raylib.h"
 
 typedef struct Game     Game;
@@ -58,13 +58,21 @@ typedef struct Scene {
 } Scene;
 
 typedef struct SceneManager {
-    Scene   activeScene;
-    float   deltaTime;
-    bool    sceneChanged;
-    bool    isRunning;
+    Scene       activeScene;
+    float       deltaTime;
+    bool        sceneChanged;
+    bool        isRunning;
+
+    float       fadeAlpha;
+    bool        fadingOut;
+    bool        transitioning;
+    SceneType   pendingScene;
 } SceneManager;
 
 void UpdateScene(SceneManager *sm);
+void BeginSceneTransition(SceneManager *sm, SceneType nextScene);
+void UpdateSceneTransition(SceneManager *sm);
+void DrawSceneTransition(const SceneManager *sm);
 
 void SceneTitleInit(Scene *s);
 void SceneTitleUpdate(Game *game);
@@ -86,6 +94,5 @@ void SceneOptionsDrawWorld(Game *game);
 void SceneOptionsRebuildTextures(Game *game);
 void SceneOptionsDrawUI(Game *game);
 void SceneOptionsUnload(Scene *s);
-
 
 #endif

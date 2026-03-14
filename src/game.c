@@ -40,7 +40,12 @@ Game GameInit(const u32 sw, const u32 sh)
         },
         .deltaTime    = 0.0f,
         .sceneChanged = false,
-        .isRunning    = true
+        .isRunning    = true,
+
+        .fadeAlpha    = 1.0f,
+        .fadingOut    = false,
+        .transitioning = true,
+        .pendingScene = SCENE_TITLE
     };
 
     sm->activeScene.Init(&sm->activeScene);
@@ -58,10 +63,16 @@ void GameUpdate(Game *game)
         SetTextureFilter(game->viewport.target.texture, TEXTURE_FILTER_POINT);
     }
 
-    game->sceneManager.activeScene.Update(game);
+    if (!game->sceneManager.transitioning)
+        game->sceneManager.activeScene.Update(game);
 
-    if (game->sceneManager.sceneChanged)
-        UpdateScene(&game->sceneManager);
+    if (game->sceneManager.sceneChanged) {
+        BeginSceneTransition(&game->sceneManager,
+            game->sceneManager.activeScene.type);
+        game->sceneManager.sceneChanged = false;
+    }
+
+    UpdateSceneTransition(&game->sceneManager);
 }
 
 void GameDraw(Game *game)
@@ -77,6 +88,7 @@ void GameDraw(Game *game)
         ClearBackground(BLACK);
         DrawVirtualResolution(&game->viewport);
         game->sceneManager.activeScene.DrawUI(game);
+        DrawSceneTransition(&game->sceneManager);
     EndDrawing();
 }
 
