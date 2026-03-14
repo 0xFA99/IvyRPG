@@ -4,10 +4,6 @@
 #include "ivy/tilemap/tilemap.h"
 
 typedef struct {
-    int x, y, w, h;
-} RectInfo;
-
-typedef struct {
     Rectangle  *rect;
     u32         rectCount;
 } Collision;

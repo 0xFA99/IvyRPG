@@ -4,146 +4,170 @@
 #include <assert.h>
 #include <stdlib.h>
 
+/* -------------------------------------------------------------------------
+ * Internal types
+ * ---------------------------------------------------------------------- */
 
-static bool
-IsSolidTile(const Tilemap *tilemap, const int layerIndex, const int x, const int y)
+typedef struct {
+    int x, y, w, h;
+} RectInfo;
+
+/*
+ * Max rects per map. A 19x18 map has 342 tiles max -- 512 is generous.
+ * Increase if you have larger maps.
+ */
+#define MAX_COLLISION_RECTS 512
+
+/* -------------------------------------------------------------------------
+ * IsSolidTile
+ * ---------------------------------------------------------------------- */
+
+static bool IsSolidTile(const Tilemap *tilemap, const int layerIndex,
+                         const int x, const int y)
 {
     const Layer *layer = &tilemap->layers[layerIndex];
-    if (x < 0 || x >= (int)layer->width || y < 0 || y >= (int)layer->height) return false;
+    if (x < 0 || x >= (int)layer->width)  return false;
+    if (y < 0 || y >= (int)layer->height) return false;
     if (layer->data[y * layer->width + x] == 0) return false;
 
     const TileType type = TM_GetTileType(tilemap, (u32)layerIndex, (u32)x, (u32)y);
-
-    return type == TILE_BORDER    ||
-           type == TILE_WALL      ||
+    return type == TILE_BORDER   ||
+           type == TILE_WALL     ||
            type == TILE_COLLISION ||
            type == TILE_TABLE;
 }
 
-static void
-ComputeCollisionRects(const Tilemap *tilemap, const int layerIndex,
-                      RectInfo **outRects, int *outCount, int *outCapacity)
+/* -------------------------------------------------------------------------
+ * ComputeCollisionRects
+ *
+ * Greedy rect-merge: scans left-to-right, top-to-bottom.
+ * For each unvisited solid tile, expands a rect as wide as possible,
+ * then as tall as possible (all rows must be full-width solid).
+ *
+ * Returns number of rects written into outBuf.
+ * ---------------------------------------------------------------------- */
+
+static int ComputeCollisionRects(const Tilemap *tilemap, const int layerIndex,
+                                  RectInfo *outBuf, const int maxRects)
 {
-    const Layer *layer  = &tilemap->layers[layerIndex];
-    bool *visited       = calloc(layer->width * layer->height, sizeof(bool));
-    assert(visited);
+    const Layer *layer = &tilemap->layers[layerIndex];
+    const int    w     = (int)layer->width;
+    const int    h     = (int)layer->height;
 
-    int rectCount    = 0;
-    int rectCapacity = 0;
-    RectInfo *rects  = NULL;
+    bool *visited = calloc((size_t)(w * h), sizeof(bool));
+    assert(visited && "[ERROR] Failed to allocate visited buffer!");
 
-    for (int y = 0; y < (int)layer->height; y++)
+    int rectCount = 0;
+
+    for (int y = 0; y < h; y++)
     {
-        for (int x = 0; x < (int)layer->width; x++)
+        for (int x = 0; x < w; x++)
         {
-            if (!IsSolidTile(tilemap, layerIndex, x, y) || visited[y * layer->width + x])
+            if (visited[y * w + x] || !IsSolidTile(tilemap, layerIndex, x, y))
                 continue;
 
-            // Expand horizontal
-            int w = 1;
-            while (x + w < (int)layer->width &&
-                   IsSolidTile(tilemap, layerIndex, x + w, y) &&
-                   !visited[y * layer->width + (x + w)])
-                w++;
+            /* Expand right */
+            int rw = 1;
+            while (x + rw < w &&
+                   !visited[y * w + (x + rw)] &&
+                   IsSolidTile(tilemap, layerIndex, x + rw, y))
+            {
+                rw++;
+            }
 
-            // Expand vertical
-            int h = 1;
-            while (y + h < (int)layer->height)
+            /* Expand down -- every cell in the row must be solid & unvisited */
+            int rh = 1;
+            while (y + rh < h)
             {
                 bool canExpand = true;
-                for (int i = 0; i < w; i++) {
-                    if (!IsSolidTile(tilemap, layerIndex, x + i, y + h) ||
-                        visited[(y + h) * layer->width + (x + i)]) {
+                for (int col = 0; col < rw; col++) {
+                    if (visited[(y + rh) * w + (x + col)] ||
+                        !IsSolidTile(tilemap, layerIndex, x + col, y + rh))
+                    {
                         canExpand = false;
                         break;
                     }
                 }
                 if (!canExpand) break;
-                h++;
+                rh++;
             }
 
-            // Mark visited
-            for (int row = 0; row < h; row++)
-                for (int col = 0; col < w; col++)
-                    visited[(y + row) * layer->width + (x + col)] = true;
+            /* Mark all cells in rect as visited */
+            for (int row = 0; row < rh; row++)
+                for (int col = 0; col < rw; col++)
+                    visited[(y + row) * w + (x + col)] = true;
 
-            if (rectCount >= rectCapacity) {
-                rectCapacity = rectCapacity == 0 ? 16 : rectCapacity * 2;
-                RectInfo *tmp = realloc(rects, rectCapacity * sizeof(RectInfo));
-                assert(tmp && "[ERROR] Failed to realloc collision rects");
-                rects = tmp;
-            }
-
-            rects[rectCount++] = (RectInfo){ x, y, w, h };
+            if (rectCount < maxRects)
+                outBuf[rectCount++] = (RectInfo){ x, y, rw, rh };
         }
     }
 
     free(visited);
-    *outRects    = rects;
-    *outCount    = rectCount;
-    *outCapacity = rectCapacity;
+    return rectCount;
 }
+
+/* -------------------------------------------------------------------------
+ * InitCollisionAllLayers
+ * ---------------------------------------------------------------------- */
 
 Collision *InitCollisionAllLayers(const Tilemap *tilemap)
 {
-    assert(tilemap && "[ERROR] Tilemap is NULL");
+    assert(tilemap && "[ERROR] Tilemap is NULL!");
 
-    Collision *collision  = malloc(sizeof(Collision));
-    assert(collision);
-    collision->rect      = NULL;
-    collision->rectCount = 0;
+    /* Temporary heap buffer -- large enough for all layers combined */
+    RectInfo *tmpRects = malloc(MAX_COLLISION_RECTS * sizeof(RectInfo));
+    assert(tmpRects && "[ERROR] Failed to allocate temp rect buffer!");
 
-    RectInfo *allRects  = NULL;
-    int allCount        = 0;
-    int allCapacity     = 0;
+    int totalCount = 0;
 
     for (int l = 0; l < (int)tilemap->header.layerCount; l++)
     {
-        RectInfo *layerRects = NULL;
-        int layerCount       = 0;
-        int layerCapacity    = 0;
+        const int remaining = MAX_COLLISION_RECTS - totalCount;
+        if (remaining <= 0) break;
 
-        ComputeCollisionRects(tilemap, l, &layerRects, &layerCount, &layerCapacity);
-
-        for (int i = 0; i < layerCount; i++)
-        {
-            if (allCount >= allCapacity) {
-                allCapacity = allCapacity == 0 ? 16 : allCapacity * 2;
-                RectInfo *tmp = realloc(allRects, allCapacity * sizeof(RectInfo));
-                assert(tmp && "[ERROR] Failed to realloc allRects");
-                allRects = tmp;
-            }
-            allRects[allCount++] = layerRects[i];
-        }
-
-        free(layerRects);
+        const int layerCount = ComputeCollisionRects(
+            tilemap, l,
+            tmpRects + totalCount,
+            remaining
+        );
+        totalCount += layerCount;
     }
 
-    if (allCount == 0) {
-        free(allRects);
+    Collision *collision = malloc(sizeof(Collision));
+    assert(collision && "[ERROR] Failed to allocate Collision!");
+
+    collision->rect      = NULL;
+    collision->rectCount = 0;
+
+    if (totalCount == 0) {
+        free(tmpRects);
         return collision;
     }
 
     const float tw = (float)tilemap->header.tileWidth;
     const float th = (float)tilemap->header.tileHeight;
 
-    collision->rect = malloc(allCount * sizeof(Rectangle));
-    assert(collision->rect && "[ERROR] Failed to alloc collision rects");
+    collision->rect = malloc((size_t)totalCount * sizeof(Rectangle));
+    assert(collision->rect && "[ERROR] Failed to allocate collision rects!");
 
-    for (int i = 0; i < allCount; i++) {
+    for (int i = 0; i < totalCount; i++) {
         collision->rect[i] = (Rectangle){
-            .x      = (float)allRects[i].x * tw,
-            .y      = (float)allRects[i].y * th,
-            .width  = (float)allRects[i].w * tw,
-            .height = (float)allRects[i].h * th
+            .x      = (float)tmpRects[i].x * tw,
+            .y      = (float)tmpRects[i].y * th,
+            .width  = (float)tmpRects[i].w * tw,
+            .height = (float)tmpRects[i].h * th,
         };
     }
 
-    collision->rectCount = (u32)allCount;
+    collision->rectCount = (u32)totalCount;
 
-    free(allRects);
+    free(tmpRects);
     return collision;
 }
+
+/* -------------------------------------------------------------------------
+ * DestroyCollision
+ * ---------------------------------------------------------------------- */
 
 void DestroyCollision(Collision *collision)
 {
