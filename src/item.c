@@ -3,12 +3,15 @@
 
 #include <assert.h>
 #include <stdlib.h>
-#include <string.h>
 
 ItemManager *CreateItemManager(void)
 {
     ItemManager *m = calloc(1, sizeof(ItemManager));
     assert(m && "[ERROR] Failed to alloc ItemManager");
+
+    const int result = ArenaPoolInit(&m->pool, sizeof(Item), ITEM_MANAGER_CAPACITY);
+    assert(result == 0 && "[ERROR] Failed to init ItemManager pool");
+
     return m;
 }
 
@@ -17,7 +20,7 @@ void DestroyItemManager(ItemManager *manager)
     if (!manager) return;
 
     for (u32 i = 0; i < manager->count; i++) {
-        const Item *item = &manager->items[i];
+        const Item *item = manager->items[i];
         if (item->type == ITEM_EQUIPMENT) {
             UnloadTexture(item->data.equipment.iconTexture);
             UnloadTexture(item->data.equipment.charTexture);
@@ -25,6 +28,7 @@ void DestroyItemManager(ItemManager *manager)
         }
     }
 
+    ArenaPoolDestroy(&manager->pool);
     free(manager);
 }
 
@@ -32,7 +36,7 @@ const Item *ItemManagerFind(const ItemManager *manager, const u32 id)
 {
     assert(manager);
     for (u32 i = 0; i < manager->count; i++) {
-        if (manager->items[i].id == id) return &manager->items[i];
+        if (manager->items[i]->id == id) return manager->items[i];
     }
     return NULL;
 }
@@ -54,7 +58,9 @@ void LoadItemsFromFile(ItemManager *manager, const char *filename)
         return;
     }
 
-    Item *it = &manager->items[manager->count];
+    Item *it = ArenaPoolAlloc(&manager->pool);
+    assert(it && "[ERROR] ItemManager pool exhausted");
+
     fread(&it->id,   sizeof(unsigned int), 1, f);
     fread(&it->type, sizeof(int),          1, f);
     fread(it->name,  1, 32, f);
@@ -62,7 +68,8 @@ void LoadItemsFromFile(ItemManager *manager, const char *filename)
     it->name[31] = '\0';
     it->desc[63] = '\0';
 
-    if (it->type == ITEM_EQUIPMENT) {
+    if (it->type == ITEM_EQUIPMENT)
+    {
         EquipmentData *eq = &it->data.equipment;
         char path[64];
 
@@ -73,13 +80,13 @@ void LoadItemsFromFile(ItemManager *manager, const char *filename)
         eq->charTexture = LoadTextureFromImageBin(path);
 
         fread(path, 1, 64, f);  path[63] = '\0';
-        eq->portraitTex = LoadTextureFromImageBin(path);
+        if (path[0] != '0') eq->portraitTex = LoadTextureFromImageBin(path);
 
         fread(&eq->position.x, sizeof(float), 1, f);
         fread(&eq->position.y, sizeof(float), 1, f);
         fread(&eq->slot,       sizeof(int),   1, f);
     }
 
-    manager->count++;
+    manager->items[manager->count++] = it;
     fclose(f);
 }

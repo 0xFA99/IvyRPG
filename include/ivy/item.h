@@ -2,6 +2,7 @@
 #define IVY_ITEM_H
 
 #include "ivy/types.h"
+#include "ivy/arena/pool.h"
 #include "raylib/raylib.h"
 
 #define ITEM_MANAGER_CAPACITY 256
@@ -62,8 +63,9 @@ typedef struct {
 } Item;
 
 typedef struct {
-    Item    items[ITEM_MANAGER_CAPACITY];
-    u32     count;
+    ArenaPool   pool;
+    Item       *items[ITEM_MANAGER_CAPACITY];
+    u32         count;
 } ItemManager;
 
 ItemManager    *CreateItemManager(void);
