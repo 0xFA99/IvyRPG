@@ -60,8 +60,11 @@ add_executable(${PROJECT_NAME}
         src/camera.c
         src/collision.c
         src/item.c
-        src/inventory.c
-        src/inventory_ui.c
+        src/inventory/inventory.c
+        src/inventory/inventory_ui.c
+
+        src/allocator/linear.c
+        src/allocator/pool.c
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE ivy_scene ${PLATFORM_LIBS})
