@@ -13,7 +13,12 @@ void SceneGameplayInit(Scene *s)
     SceneGameplayData *gd = malloc(sizeof(SceneGameplayData));
     assert(gd && "[ERROR] Failed to allocate memory for SceneGameplayData!");
 
+    // START - TEST TILEMAP TIME
+    double startTime = GetTime();
     gd->tilemap     = LoadTilemapById(1);
+    printf("Map loaded in: %f ms\n", (GetTime() - startTime) * 1000.0);
+    // END - TEST TILEMAP TIME
+
     gd->collision   = InitCollisionAllLayers(gd->tilemap);
     gd->itemManager = CreateItemManager();
 
@@ -31,6 +36,7 @@ void SceneGameplayInit(Scene *s)
     LoadItemsFromFile(gd->itemManager, "assets/items/equipments/maid_bando.bin");
     LoadItemsFromFile(gd->itemManager, "assets/items/equipments/black_gothic_bando.bin");
     LoadItemsFromFile(gd->itemManager, "assets/items/equipments/red_gothic_bando.bin");
+    LoadItemsFromFile(gd->itemManager, "assets/items/equipments/wooden_shield.bin");
 
     gd->player = InitPlayer(
         gd->tilemap->header.spawnPointX,
@@ -39,7 +45,7 @@ void SceneGameplayInit(Scene *s)
     );
 
     for (u32 i = 0; i < gd->itemManager->count; i++)
-        InventoryAdd(gd->player->inventory, &gd->itemManager->items[i]);
+        InventoryAdd(gd->player->inventory, gd->itemManager->items[i]);
 
     gd->gameCamera = InitGameCamera(VIRTUAL_WIDTH, VIRTUAL_HEIGHT);
     gd->gameCamera.camera2D.target = gd->player->movement.position;
@@ -47,6 +53,7 @@ void SceneGameplayInit(Scene *s)
     gd->inventoryUI = CreateInventoryUI();
 
     s->data.gameplay = gd;
+
 }
 
 void SceneGameplayUpdate(Game *game)
@@ -112,7 +119,7 @@ void SceneGameplayRebuildTextures(Game *game)
 
 void SceneGameplayDrawUI(Game *game)
 {
-    SceneGameplayData *gd = game->sceneManager.activeScene.data.gameplay;
+    const SceneGameplayData *gd = game->sceneManager.activeScene.data.gameplay;
 
     DrawPortraitHUD(&gd->player->portrait, &game->viewport);
 
