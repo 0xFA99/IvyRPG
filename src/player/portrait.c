@@ -35,10 +35,14 @@ void RebuildPortrait(Portrait *p, const PlayerGraphics *graphics, const PlayerEq
     BeginTextureMode(p->canva);
     ClearBackground(BLANK);
 
-    DrawLayer(&graphics->bodyPortrait, 295.0f, 282.0f, 0.0f, 88.0f);
+    const Texture2D *basePortrait = &graphics->bodyPortrait;
 
-    for (u32 i = SLOT_MAX_SIZE; i-- > 0; ) {
-        if (!(equip->slotMask & (1u << i))) continue;
+    DrawLayer(basePortrait, (float)basePortrait->width, (float)basePortrait->height, 5.0f, 118.0f);
+
+    for (u32 i = SLOT_MAX_SIZE; i-- > 0; )
+    {
+        if (!(equip->slotMask & 1u << i)) continue;
+
         const Item *item = equip->slots[i];
         if (!item) continue;
 
@@ -46,15 +50,20 @@ void RebuildPortrait(Portrait *p, const PlayerGraphics *graphics, const PlayerEq
         if (slot == SLOT_MID || slot == SLOT_MID_EXT || slot == SLOT_TOP || slot == SLOT_BOT) {
             const Texture2D *tex = &item->data.equipment.portraitTex;
             const Vector2 pos = item->data.equipment.position;
-            DrawLayer(tex, tex->width, tex->height, pos.x, pos.y);
+            DrawLayer(tex, (float)tex->width, (float)tex->height, pos.x, pos.y);
         }
     }
 
-    DrawLayer(&graphics->headPortrait, 123.0f, 115.0f, 97.0f, 0.0f);
-    DrawLayer(&graphics->hairPortrait, 126.0f, 93.0f, 95.0f, 1.0f);
+    basePortrait = &graphics->headPortrait;
+    DrawLayer(basePortrait, (float)basePortrait->width, (float)basePortrait->height, 102.0f, 30.0f);
 
-    for (u32 i = SLOT_MAX_SIZE; i-- > 0; ) {
-        if (!(equip->slotMask & (1u << i))) continue;
+    basePortrait = &graphics->hairPortrait;
+    DrawLayer(basePortrait, (float)basePortrait->width, (float)basePortrait->height, 100.0f, 31.0f);
+
+    for (u32 i = SLOT_MAX_SIZE; i-- > 0; )
+    {
+        if (!(equip->slotMask & 1u << i)) continue;
+
         const Item *item = equip->slots[i];
         if (!item) continue;
 
@@ -62,12 +71,15 @@ void RebuildPortrait(Portrait *p, const PlayerGraphics *graphics, const PlayerEq
         if (slot == SLOT_HEAD || slot == SLOT_EXT_1) {
             const Texture2D *tex = &item->data.equipment.portraitTex;
             const Vector2 pos = item->data.equipment.position;
-            DrawLayer(tex, tex->width, tex->height, pos.x, pos.y);
+            DrawLayer(tex, (float)tex->width, (float)tex->height, pos.x, pos.y);
         }
     }
 
-    DrawLayer(&graphics->mouthPortrait, 44.0f, 37.0f, 121.0f, 86.0f);
-    DrawLayer(&graphics->eyesPortrait, 91.0f, 78.0f, 103.0f, 22.0f);
+    basePortrait = &graphics->mouthPortrait;
+    DrawLayer(basePortrait, (float)basePortrait->width, (float)basePortrait->height, 126.0f, 116.0f);
+
+    basePortrait = &graphics->eyesPortrait;
+    DrawLayer(basePortrait, (float)basePortrait->height, (float)basePortrait->height, 108.0f, 52.0f);
 
     EndTextureMode();
 
@@ -79,8 +91,8 @@ void DrawPortraitHUD(const Portrait *p, const VirtualResolution *vr)
     if (!p) return;
 
     const float margin = 6.0f;
-    const float hw     = (float)PORTRAIT_HUD_W;
-    const float hh     = (float)PORTRAIT_HUD_H;
+    const float hw     = PORTRAIT_HUD_W;
+    const float hh     = PORTRAIT_HUD_H;
 
     const Vector2 vPos = {
         VIRTUAL_WIDTH  - hw - margin,
