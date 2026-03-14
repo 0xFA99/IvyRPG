@@ -2,13 +2,25 @@
 
 u32 GetSpriteRow(const Player *player)
 {
-    u32 baseRow = 0;
+    if (player->graphics.action == ACTION_ATTACK)
+    {
+        switch (player->graphics.direction)
+        {
+            case DIRECTION_FRONT: return 4;
+            case DIRECTION_LEFT:  return 5;
+            case DIRECTION_RIGHT: return 6;
+            case DIRECTION_BACK:  return 7;
+            default:              return 4;
+        }
+    }
 
+    u32 baseRow = 0;
     switch (player->graphics.action)
     {
         case ACTION_WALK: baseRow = 0; break;
         case ACTION_RUN:  baseRow = 4; break;
         case ACTION_IDLE: baseRow = 0; break;
+        default:          baseRow = 0; break;
     }
 
     switch (player->graphics.direction)
@@ -21,14 +33,24 @@ u32 GetSpriteRow(const Player *player)
     }
 }
 
+u32 GetSpriteCol(const Player *player)
+{
+    if (player->graphics.action == ACTION_ATTACK)
+        return ATTACK_ANIM_START_COL + player->animation.attackFrame;
+
+    return player->animation.currentFrame;
+}
+
 void UpdateAnimation(Player *player, const float frameTime)
 {
-    PlayerAnimation *anim   = &player->animation;
+    PlayerAnimation *anim    = &player->animation;
     const PlayerAction action = player->graphics.action;
 
+    if (action == ACTION_ATTACK) return;
+
     if (action == ACTION_IDLE) {
-        anim->currentFrame  = 1;
-        anim->frameTimer    = 0.0f;
+        anim->currentFrame   = 1;
+        anim->frameTimer     = 0.0f;
         return;
     }
 
@@ -43,13 +65,69 @@ void UpdateAnimation(Player *player, const float frameTime)
         const int next  = (int)anim->currentFrame + delta;
 
         if (next >= 2) {
-            anim->currentFrame  = 2;
+            anim->currentFrame   = 2;
             anim->frameDirection = 0;
         } else if (next <= 0) {
-            anim->currentFrame  = 0;
+            anim->currentFrame   = 0;
             anim->frameDirection = 1;
         } else {
             anim->currentFrame = (u32)next;
+        }
+    }
+}
+
+Rectangle GetAttackHitbox(const Player *player)
+{
+    const float cx      = player->movement.position.x;
+    const float cy      = player->movement.position.y;
+    const float hw      = ATTACK_HITBOX_W * 0.5f;
+    const float hh      = ATTACK_HITBOX_H * 0.5f;
+    const float reach   = ATTACK_HITBOX_REACH;
+
+    switch (player->graphics.direction)
+    {
+        case DIRECTION_FRONT:   return (Rectangle){ cx - hw, cy + reach - hh, ATTACK_HITBOX_W, ATTACK_HITBOX_H };
+        case DIRECTION_BACK:    return (Rectangle){ cx - hw, cy - reach - hh, ATTACK_HITBOX_W, ATTACK_HITBOX_H };
+        case DIRECTION_LEFT:    return (Rectangle){ cx - reach - hw, cy - hh, ATTACK_HITBOX_W, ATTACK_HITBOX_H };
+        case DIRECTION_RIGHT:   return (Rectangle){ cx + reach - hw, cy - hh, ATTACK_HITBOX_W, ATTACK_HITBOX_H };
+        default:                return (Rectangle){ cx - hw, cy - hh, ATTACK_HITBOX_W, ATTACK_HITBOX_H };
+    }
+}
+
+void UpdateAttack(Player *player, const float frameTime, const Collision *collision)
+{
+    PlayerAnimation *anim = &player->animation;
+
+    anim->attackFrameTimer += frameTime;
+
+    if (anim->attackFrameTimer >= ATTACK_ANIM_SPEED)
+    {
+        anim->attackFrameTimer = 0.0f;
+        anim->attackFrame++;
+
+        if (anim->attackFrame >= ATTACK_ANIM_FRAMES)
+        {
+            anim->attackFrame      = 0;
+            anim->attackHitApplied = false;
+            anim->attackCooldown   = ATTACK_COOLDOWN;
+            player->graphics.action = ACTION_IDLE;
+            return;
+        }
+    }
+
+    if (anim->attackFrame == ATTACK_HIT_FRAME && !anim->attackHitApplied)
+    {
+        anim->attackHitApplied = true;
+
+        const Rectangle hitbox = GetAttackHitbox(player);
+
+        for (u32 i = 0; i < collision->rectCount; i++)
+        {
+            if (CheckCollisionRecs(hitbox, collision->rect[i]))
+            {
+                // TODO: Hit Something lol
+                TraceLog(LOG_INFO, "ATTACK HIT: collision rect [%u]", i);
+            }
         }
     }
 }
@@ -119,7 +197,7 @@ bool StartMoving(Player *player, const Vector2 inputDir, const Direction nextDir
         return false;
     }
 
-    const PlayerAction action     = isRunning ? ACTION_RUN : ACTION_WALK;
+    const PlayerAction action = isRunning ? ACTION_RUN : ACTION_WALK;
     player->graphics.action       = action;
     player->movement.moveDuration = GetMoveDuration(action);
     player->movement.targetTilePosition = target;
@@ -132,6 +210,8 @@ bool StartMoving(Player *player, const Vector2 inputDir, const Direction nextDir
 void UpdatePlayerMovement(Player *player, const float frameTime,
                           const Collision *collision, const u32 tileSize)
 {
+    if (player->graphics.action == ACTION_ATTACK) return;
+
     const float ts = (float)tileSize;
 
     Vector2   inputDir = {0};
@@ -186,7 +266,7 @@ void UpdatePlayerMovement(Player *player, const float frameTime,
         {
             player->movement.tilePosition = player->movement.targetTilePosition;
 
-            Vector2   freshDir   = {0};
+            Vector2   freshDir    = {0};
             Direction freshFacing = player->graphics.direction;
             const bool stillHolding = GetMovementInput(&freshDir, &freshFacing);
 
@@ -199,9 +279,9 @@ void UpdatePlayerMovement(Player *player, const float frameTime,
 
                 if (!IsTileSolid(nextTarget, collision, tileSize))
                 {
-                    const PlayerAction nextAction   = isShift ? ACTION_RUN : ACTION_WALK;
+                    const PlayerAction nextAction = isShift ? ACTION_RUN : ACTION_WALK;
                     player->movement.targetTilePosition = nextTarget;
-                    player->movement.moveTimer      -= player->movement.moveDuration;
+                    player->movement.moveTimer     -= player->movement.moveDuration;
                     player->movement.moveDuration   = GetMoveDuration(nextAction);
                     player->graphics.action         = nextAction;
                     player->graphics.direction      = freshFacing;

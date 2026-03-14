@@ -54,8 +54,36 @@ Player *InitPlayer(const u32 spawnX, const u32 spawnY, const u32 tileSize)
 void UpdatePlayer(Player *player, const float frameTime,
                   const Collision *collision, const u32 tileSize)
 {
-    UpdatePlayerMovement(player, frameTime, collision, tileSize);
-    UpdateAnimation(player, frameTime);
+    if (player->animation.attackCooldown > 0.0f)
+    {
+        player->animation.attackCooldown -= frameTime;
+        if (player->animation.attackCooldown < 0.0f)
+            player->animation.attackCooldown = 0.0f;
+    }
+
+    if (player->graphics.action != ACTION_ATTACK &&
+        player->animation.attackCooldown <= 0.0f  &&
+        !player->movement.isMoving)
+    {
+        if (IsKeyPressed(KEY_J) || IsKeyPressed(KEY_Z))
+        {
+            player->animation.attackFrame      = 0;
+            player->animation.attackFrameTimer = 0.0f;
+            player->animation.attackHitApplied = false;
+            player->graphics.action            = ACTION_ATTACK;
+        }
+    }
+
+    if (player->graphics.action == ACTION_ATTACK)
+    {
+        UpdateAttack(player, frameTime, collision);
+    }
+    else
+    {
+        UpdatePlayerMovement(player, frameTime, collision, tileSize);
+        UpdateAnimation(player, frameTime);
+    }
+
     UpdatePlayerCollision(player);
 }
 
@@ -70,8 +98,8 @@ void DrawPlayer(const Player *player, const VirtualResolution *vr)
     (void)vr;
 
     const Rectangle src = {
-        .x      = (float)player->animation.currentFrame * PLAYER_FRAME_SIZE,
-        .y      = (float)GetSpriteRow(player)           * PLAYER_FRAME_SIZE,
+        .x      = (float)GetSpriteCol(player) * PLAYER_FRAME_SIZE,
+        .y      = (float)GetSpriteRow(player) * PLAYER_FRAME_SIZE,
         .width  = PLAYER_FRAME_SIZE,
         .height = PLAYER_FRAME_SIZE
     };
@@ -119,6 +147,9 @@ void DrawPlayerDebug(const Player *player)
 {
     DrawRectangleLinesEx(player->movement.collisionBox, 1.0f, RED);
     DrawCircleV(player->movement.position, 2.0f, BLUE);
+
+    if (player->graphics.action == ACTION_ATTACK)
+        DrawRectangleLinesEx(GetAttackHitbox(player), 1.0f, YELLOW);
 }
 
 void PlayerEquip(Player *player, const u32 inventoryIndex)
