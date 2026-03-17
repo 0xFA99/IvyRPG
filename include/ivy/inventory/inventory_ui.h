@@ -1,7 +1,6 @@
 #ifndef IVY_INVENTORY_UI_H
 #define IVY_INVENTORY_UI_H
 
-#include "inventory.h"
 #include "ivy/virtual.h"
 #include "raylib/raylib.h"
 

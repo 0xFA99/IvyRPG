@@ -3,16 +3,33 @@
 #include "ivy/scenes.h"
 #include "ivy/virtual.h"
 
-#include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
+
+static const LocaleKey MENU_KEYS[] = {
+    LOC_OPT_SCREEN_SIZE,
+    LOC_OPT_FULLSCREEN,
+    LOC_OPT_LANGUAGE,
+    LOC_OPT_BACK
+};
 
 static const char *MENU_ITEMS[] = {
     "SCREEN SIZE",
     "FULLSCREEN",
+    "LANGUAGE",
     "BACK",
 };
-static const u32 MENU_COUNT = 3;
+static const u32 MENU_COUNT = sizeof(MENU_ITEMS) / sizeof(MENU_ITEMS[0]);
+
+typedef struct {
+    const char *path;
+} LocaleEntry;
+
+static const LocaleEntry LOCALES[] = {
+    { "assets/i18n/en.bin" },
+    { "assets/i18n/id.bin" }
+};
+static const u32 LOCALE_COUNT = sizeof(LOCALES) / sizeof(LOCALES[0]);
 
 typedef struct {
     u32 width;
@@ -53,7 +70,7 @@ static int GetCurrentScreenSizeIndex(u32 width, u32 height)
 void SceneOptionsInit(Scene *s)
 {
     SceneOptionsData *sd = malloc(sizeof(SceneOptionsData));
-    assert(sd && "[ERROR] Failed to allocate memory for SceneOptionsData!");
+    IVY_ASSERT(sd, "Failed to allocate SceneOptionsData");
 
     *sd = (SceneOptionsData) {
         .selectedIndex = 0,
@@ -106,7 +123,13 @@ void SceneOptionsUpdate(Game *game)
                 ClearBackground(BLACK);
             } break;
 
-            case 2: // BACK
+            case 2: { // LANGUAGE
+                sd->localeIndex = (sd->localeIndex + 1) % LOCALE_COUNT;
+                LocaleUnload(game->locale);
+                game->locale = LocaleLoad(LOCALES[sd->localeIndex].path);
+            } break;
+
+            case 3: // BACK
                 game->sceneManager.activeScene.type = SCENE_TITLE;
                 game->sceneManager.sceneChanged = true;
                 break;
@@ -151,34 +174,47 @@ void SceneOptionsDrawUI(Game *game)
         Vector2 textScreenPos  = GetScreenPos(&game->viewport, textVirtualPos);
         Color textColor = (i == sd->selectedIndex) ? WHITE : GRAY;
 
-        DrawTextEx(game->fonts[IVY_FONT_PRIMARY], MENU_ITEMS[i],
-                   textScreenPos, TEXT_SIZE * virtualScale, 1, textColor);
+        DrawTextEx(game->fonts[IVY_FONT_PRIMARY], IVY_TR(game->locale, MENU_KEYS[i]),
+            textScreenPos, TEXT_SIZE * virtualScale, 1, textColor);
     }
 
     char valueBuffer[32];
 
-    if (sd->selectedIndex == 0) { // SCREEN SIZE
+    { // SCREEN SIZE
         snprintf(valueBuffer, sizeof(valueBuffer), "%dx%d",
                  game->screen.screenWidth, game->screen.screenHeight);
-
-        Vector2 valueVirtualPos = { TEXT_X_OFFSET + VALUE_X_OFFSET, menuStartY };
-        Vector2 valueScreenPos  = GetScreenPos(&game->viewport, valueVirtualPos);
+        const Vector2 vp = { TEXT_X_OFFSET + VALUE_X_OFFSET, menuStartY };
+        const Vector2 sp = GetScreenPos(&game->viewport, vp);
         DrawTextEx(game->fonts[IVY_FONT_PRIMARY], valueBuffer,
-                   valueScreenPos, TEXT_SIZE * virtualScale, 1, YELLOW);
+                   sp, TEXT_SIZE * virtualScale, 1, YELLOW);
     }
-    else if (sd->selectedIndex == 1) { // FULLSCREEN
-        const char *status = IsWindowFullscreen() ? "ON" : "OFF";
 
-        Vector2 valueVirtualPos = { TEXT_X_OFFSET + VALUE_X_OFFSET, menuStartY + MENU_SPACING };
-        Vector2 valueScreenPos  = GetScreenPos(&game->viewport, valueVirtualPos);
+    { // FULLSCREEN
+        const char *status = IsWindowFullscreen()
+            ? Tr(game->locale, LOC_OPT_ON)
+            : Tr(game->locale, LOC_OPT_OFF);
+        const Vector2 vp = { TEXT_X_OFFSET + VALUE_X_OFFSET, menuStartY + MENU_SPACING };
+        const Vector2 sp = GetScreenPos(&game->viewport, vp);
         DrawTextEx(game->fonts[IVY_FONT_PRIMARY], status,
-                   valueScreenPos, TEXT_SIZE * virtualScale, 1, YELLOW);
+                   sp, TEXT_SIZE * virtualScale, 1, YELLOW);
     }
 
-    Vector2 titleVirtualPos = { TEXT_X_OFFSET, MARGIN_TOP };
-    Vector2 titleScreenPos  = GetScreenPos(&game->viewport, titleVirtualPos);
-    DrawTextEx(game->fonts[IVY_FONT_PRIMARY], "OPTIONS",
-               titleScreenPos, TEXT_SIZE * virtualScale * 1.5f, 1, WHITE);
+    { // LANGUAGE
+        const Vector2 vp = { TEXT_X_OFFSET + VALUE_X_OFFSET, menuStartY + MENU_SPACING * 2.0f };
+        const Vector2 sp = GetScreenPos(&game->viewport, vp);
+        DrawTextEx(game->fonts[IVY_FONT_PRIMARY],
+                   Tr(game->locale, LOC_OPT_LANG_NAME),
+                   sp, TEXT_SIZE * virtualScale, 1, YELLOW);
+    }
+
+    // Draw title
+    {
+        const Vector2 titleVirtualPos = { TEXT_X_OFFSET, MARGIN_TOP };
+        const Vector2 titleScreenPos  = GetScreenPos(&game->viewport, titleVirtualPos);
+        DrawTextEx(game->fonts[IVY_FONT_PRIMARY],
+                   Tr(game->locale, LOC_OPT_TITLE),
+                   titleScreenPos, TEXT_SIZE * virtualScale * 1.5f, 1, WHITE);
+    }
 }
 
 void SceneOptionsUnload(Scene *s)

@@ -2,7 +2,10 @@
 #define IVY_TYPES_H
 
 #define MAX_PATH_LEN 256
+
+#define CHARACTER_FRAME_SIZE 64
 #define DEFAULT_TILE_SIZE 32
+#define DEFAULT_TILE_HALF 16
 
 // CURSORS
 #define PRIMARY_CURSOR_PATH     "assets/cursors/cursorW.bin"

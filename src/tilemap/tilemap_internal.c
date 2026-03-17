@@ -1,9 +1,10 @@
 #include "ivy/tilemap/tilemap.h"
 #include "ivy/utils.h"
-#include <string.h>
+#include "ivy/game.h"
 
+#include <stdio.h>
+#include <string.h>
 #include <stdlib.h>
-#include <assert.h>
 
 
 void TM_LoadHeader(FILE *file, Tilemap *tilemap)
@@ -14,25 +15,30 @@ void TM_LoadHeader(FILE *file, Tilemap *tilemap)
 void TM_LoadTilesets(FILE *file, Tilemap *tilemap)
 {
     const u32 count = tilemap->header.tilesetCount;
+    if (count == 0) return;
 
     tilemap->tilesets = malloc(sizeof(Tileset) * count);
-    assert(tilemap->tilesets && "[ERROR] Failed to allocate tilesets!");
+    IVY_ASSERT(tilemap->tilesets, "Failed to allocate tilesets");
 
     char pathBuffer[MAX_PATH_LEN];
 
     for (u32 i = 0; i < count; i++)
     {
         Tileset *ts = &tilemap->tilesets[i];
-
         ReadExact(file, &ts->firstGid, sizeof(u32));
         ts->texturePath = ReadString(file);
 
-        char nameBuffer[MAX_PATH_LEN];
-        snprintf(nameBuffer, MAX_PATH_LEN, "%s", (const char *)ts->texturePath);
-        char *dot = strrchr(nameBuffer, '.');
+        const int written = snprintf(pathBuffer, sizeof(pathBuffer), "%s/%s",
+                               TILESET_ASSET_PATH, (const char *)ts->texturePath);
+
+        if (written >= (int)sizeof(pathBuffer)) {
+            fprintf(stderr, "Error: Path too long for tileset %s\n", (char*)ts->texturePath);
+            continue;
+        }
+
+        char *dot = strrchr(pathBuffer, '.');
         if (dot) strcpy(dot, ".bin");
 
-        snprintf(pathBuffer, MAX_PATH_LEN, "%s/%s", TILESET_ASSET_PATH, nameBuffer);
         ts->texture = LoadTextureFromImageBin(pathBuffer);
     }
 }
@@ -42,7 +48,7 @@ void TM_LoadLayers(FILE *file, Tilemap *tilemap)
     const u32 count = tilemap->header.layerCount;
 
     tilemap->layers = malloc(sizeof(Layer) * count);
-    assert(tilemap->layers && "[ERROR] Failed to allocate layers!");
+    IVY_ASSERT(tilemap->layers, "Failed to allocate layers");
 
     for (u32 i = 0; i < count; i++)
     {
@@ -53,11 +59,10 @@ void TM_LoadLayers(FILE *file, Tilemap *tilemap)
 
         const u32 cellCount = layer->width * layer->height;
         layer->data = malloc(sizeof(u32) * cellCount);
-        assert(layer->data && "[ERROR] Failed to allocate layer data!");
+        IVY_ASSERT(layer->data, "Failed to allocate layer data");
         ReadExact(file, layer->data, sizeof(u32) * cellCount);
     }
 }
-
 
 void TM_LoadLookupTables(FILE *file, Tilemap *tilemap)
 {
@@ -77,8 +82,8 @@ void TM_LoadLookupTables(FILE *file, Tilemap *tilemap)
 
     tilemap->tileTypeTable     = malloc(tableSize * sizeof(u8));
     tilemap->tilesetIndexTable = malloc(tableSize * sizeof(u8));
-    assert(tilemap->tileTypeTable && tilemap->tilesetIndexTable &&
-           "[ERROR] Failed to allocate lookup tables!");
+    IVY_ASSERT(tilemap->tileTypeTable && tilemap->tilesetIndexTable,
+               "Failed to allocate lookup tables");
 
     ReadExact(file, tilemap->tileTypeTable,     tableSize * sizeof(u8));
     ReadExact(file, tilemap->tilesetIndexTable, tableSize * sizeof(u8));
@@ -89,7 +94,7 @@ void TM_BuildDrawInfoTable(Tilemap *tilemap)
     const u32 tableSize = tilemap->maxGid + 1;
 
     tilemap->tileDrawInfoTable = calloc(tableSize, sizeof(TileDrawInfo));
-    assert(tilemap->tileDrawInfoTable && "[ERROR] Failed to allocate draw info table!");
+    IVY_ASSERT(tilemap->tileDrawInfoTable, "Failed to allocate draw info table");
 
     for (u32 tsIdx = 0; tsIdx < tilemap->header.tilesetCount; tsIdx++)
     {

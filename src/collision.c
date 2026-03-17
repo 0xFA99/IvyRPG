@@ -1,8 +1,9 @@
 #include "ivy/collision.h"
 #include "ivy/tilemap/tilemap_internal.h"
 
-#include <assert.h>
 #include <stdlib.h>
+
+#include "ivy/game.h"
 
 
 typedef struct {
@@ -34,7 +35,7 @@ static int ComputeCollisionRects(const Tilemap *tilemap, const int layerIndex,
     const int    h     = (int)layer->height;
 
     bool *visited = calloc((size_t)(w * h), sizeof(bool));
-    assert(visited && "[ERROR] Failed to allocate visited buffer!");
+    IVY_ASSERT(visited, "[Collusion] Failed to allocate visited buffer!");
 
     int rectCount = 0;
 
@@ -84,10 +85,10 @@ static int ComputeCollisionRects(const Tilemap *tilemap, const int layerIndex,
 
 Collision *InitCollisionAllLayers(const Tilemap *tilemap)
 {
-    assert(tilemap && "[ERROR] Tilemap is NULL!");
+    IVY_ASSERT(tilemap, "[Collision] Cannot initialize from a NULL tilemap.");
 
     RectInfo *tmpRects = malloc(MAX_COLLISION_RECTS * sizeof(RectInfo));
-    assert(tmpRects && "[ERROR] Failed to allocate temp rect buffer!");
+    IVY_ASSERT(tmpRects, "[RectInfo] Failed to allocate temporary buffer.");
 
     int totalCount = 0;
 
@@ -105,7 +106,7 @@ Collision *InitCollisionAllLayers(const Tilemap *tilemap)
     }
 
     Collision *collision = malloc(sizeof(Collision));
-    assert(collision && "[ERROR] Failed to allocate Collision!");
+    IVY_ASSERT(collision, "[Collision] Failed to allocate memory for the Collision header.");
 
     collision->rect      = NULL;
     collision->rectCount = 0;
@@ -119,7 +120,7 @@ Collision *InitCollisionAllLayers(const Tilemap *tilemap)
     const float th = (float)tilemap->header.tileHeight;
 
     collision->rect = malloc((size_t)totalCount * sizeof(Rectangle));
-    assert(collision->rect && "[ERROR] Failed to allocate collision rects!");
+    IVY_ASSERT(collision->rect, "[Collision] Failed to allocate final rectangle array.");
 
     for (int i = 0; i < totalCount; i++) {
         collision->rect[i] = (Rectangle){

@@ -2,8 +2,14 @@
 #include "ivy/utils.h"
 #include "ivy/scenes.h"
 
-#include <assert.h>
 #include <stdlib.h>
+
+static const LocaleKey MENU_KEYS[] = {
+    LOC_MENU_NEW_GAME,
+    LOC_MENU_CONTINUE,
+    LOC_MENU_OPTIONS,
+    LOC_MENU_EXIT
+};
 
 static const char *MENU_ITEMS[] = {
     "NEW GAME",
@@ -24,7 +30,7 @@ static const float MARGIN_BOTTOM    = 36.0f;
 void SceneTitleInit(Scene *s)
 {
     SceneTitleData *sd = malloc(sizeof(SceneTitleData));
-    assert(sd && "[ERROR] Failed to allocate memory for SceneTitleData!");
+    IVY_ASSERT(sd, "Failed to allocate SceneTitleData");
 
     *sd = (SceneTitleData) {
         .selectedIndex  = 0,
@@ -108,7 +114,9 @@ void SceneTitleDrawUI(Game *game)
         const Vector2 textScreenPos  = GetScreenPos(&game->viewport, textVirtualPos);
         const Color textColor = (i == sd->selectedIndex) ? WHITE : GRAY;
 
-        DrawTextEx(game->fonts[IVY_FONT_PRIMARY], MENU_ITEMS[i], textScreenPos, TEXT_SIZE * virtualScale, 1, textColor);
+        DrawTextEx(game->fonts[IVY_FONT_PRIMARY],
+            IVY_TR(game->locale, MENU_KEYS[i]),
+            textScreenPos, TEXT_SIZE * virtualScale, 1, textColor);
     }
 }
 

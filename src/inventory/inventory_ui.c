@@ -1,9 +1,6 @@
-#include "../../include/ivy/inventory/inventory_ui.h"
+#include "ivy/inventory/inventory_ui.h"
 #include "ivy/player/player.h"
 #include "ivy/utils.h"
-
-#include <math.h>
-#include <string.h>
 
 #define POPUP_X         20.0f
 #define POPUP_Y         20.0f
@@ -81,20 +78,22 @@ bool InventoryUIUpdate(InventoryUI *ui, Player *player)
     }
 
     u32 itemCount = 0;
-    if (ui->activeTab == INV_TAB_BAG)
-        itemCount = player->inventory->count;
-    else
-        itemCount = SLOT_MAX_SIZE;
+    if (ui->activeTab == INV_TAB_BAG) itemCount = player->inventory->count;
+    else itemCount = SLOT_MAX_SIZE;
 
-    if (itemCount > 0) {
+    if (itemCount > 0)
+        {
         if (IsKeyPressed(KEY_DOWN) || IsKeyPressed(KEY_S))
             ui->selectedIndex = (ui->selectedIndex + COLS) % itemCount;
+
         if (IsKeyPressed(KEY_UP) || IsKeyPressed(KEY_W)) {
             if (ui->selectedIndex >= COLS) ui->selectedIndex -= COLS;
             else ui->selectedIndex = 0;
         }
+
         if (IsKeyPressed(KEY_RIGHT) || IsKeyPressed(KEY_D))
             ui->selectedIndex = (ui->selectedIndex + 1) % itemCount;
+
         if (IsKeyPressed(KEY_LEFT) || IsKeyPressed(KEY_A)) {
             if (ui->selectedIndex > 0) ui->selectedIndex--;
         }
@@ -135,8 +134,7 @@ static void DrawItemSlot(const Rectangle slotRect, const Item *item,
 
     if (!item) return;
 
-    const Texture2D *tex = (item->type == ITEM_EQUIPMENT)
-        ? &item->data.equipment.iconTexture : NULL;
+    const Texture2D *tex = (item->type == ITEM_EQUIPMENT) ? &item->data.equipment.iconTexture : NULL;
 
     if (tex && tex->id != 0) {
         const float pad  = 2.0f;

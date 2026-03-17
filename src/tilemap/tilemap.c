@@ -1,8 +1,8 @@
 #include "ivy/tilemap/tilemap.h"
+#include "ivy/game.h"
 
-#include <assert.h>
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 
 Tilemap *LoadTilemapById(const u32 id)
@@ -11,10 +11,10 @@ Tilemap *LoadTilemapById(const u32 id)
     snprintf(path, MAX_PATH_LEN, "%s/map_%u.bin", TILEMAP_ASSET_PATH, id);
 
     FILE *file = fopen(path, "rb");
-    assert(file && "[ERROR] Failed to open tilemap file!");
+    IVY_ASSERT(file, "Failed to open tilemap file");
 
     Tilemap *tilemap = malloc(sizeof(Tilemap));
-    assert(tilemap && "[ERROR] Failed to allocate tilemap!");
+    IVY_ASSERT(tilemap, "Failed to allocate tilemap");
 
     TM_LoadHeader       (file, tilemap);
     TM_LoadTilesets     (file, tilemap);
@@ -31,7 +31,7 @@ Tilemap *LoadTilemapById(const u32 id)
 
 void DrawTilemapFromCanva(const Tilemap *tilemap)
 {
-    assert(tilemap && "[ERROR] Tilemap is NULL!");
+    IVY_ASSERT(tilemap, "Tilemap is NULL");
 
     const float w = (float)tilemap->canva.texture.width;
     const float h = (float)tilemap->canva.texture.height;

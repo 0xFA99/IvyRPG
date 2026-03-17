@@ -1,13 +1,13 @@
-#include "../../include/ivy/inventory/inventory.h"
+#include "ivy/inventory/inventory.h"
+#include "ivy/game.h"
 
-#include <assert.h>
 #include <stdlib.h>
-#include <string.h>
+
 
 Inventory *CreateInventory(void)
 {
     Inventory *inv = calloc(1, sizeof(Inventory));
-    assert(inv && "[ERROR] Failed to alloc Inventory");
+    IVY_ASSERT(inv, "[Inventory] Failed to allocate memory for Inventory instance.");
     return inv;
 }
 
@@ -18,7 +18,9 @@ void DestroyInventory(Inventory *inv)
 
 void InventoryAdd(Inventory *inv, const Item *item)
 {
-    assert(inv && item);
+    IVY_ASSERT(inv, "[Inventory] Cannot add item to a NULL inventory.");
+    IVY_ASSERT(item, "[Inventory] Attempted to add a NULL item pointer.");
+
     if (inv->count >= INVENTORY_CAPACITY) {
         TraceLog(LOG_WARNING, "Inventory full!");
         return;
@@ -28,7 +30,8 @@ void InventoryAdd(Inventory *inv, const Item *item)
 
 void InventoryRemoveAt(Inventory *inv, const u32 index)
 {
-    assert(inv && index < inv->count);
+    IVY_ASSERT(inv, "[Inventory] Index out of bounds or inventory is NULL.");
+
     for (u32 i = index; i < inv->count - 1; i++)
         inv->items[i] = inv->items[i + 1];
     inv->items[--inv->count] = NULL;
@@ -39,7 +42,8 @@ void InventoryRemoveAt(Inventory *inv, const u32 index)
 
 void EquipItem(PlayerEquipment *equip, Inventory *inv, const u32 inventoryIndex)
 {
-    assert(equip && inv);
+    IVY_ASSERT(equip && inv, "[Equipment] Equip or Inventory instance is NULL.");
+
     if (inventoryIndex >= inv->count) return;
 
     const Item *item = inv->items[inventoryIndex];
@@ -61,7 +65,8 @@ void EquipItem(PlayerEquipment *equip, Inventory *inv, const u32 inventoryIndex)
 
 void UnequipSlot(PlayerEquipment *equip, Inventory *inv, const EquipmentSlot slot)
 {
-    assert(equip && inv);
+    IVY_ASSERT(equip && inv, "[Equipment] Equip or Inventory instance is NULL.");
+
     if (!(equip->slotMask & (1u << slot))) return;
 
     const Item *item    = equip->slots[slot];

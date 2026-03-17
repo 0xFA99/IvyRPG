@@ -3,6 +3,7 @@
 #include "ivy/virtual.h"
 
 #include "raylib/raymath.h"
+
 #include <math.h>
 
 GameCamera InitGameCamera(const u32 virtualWidth, const u32 virtualHeight)

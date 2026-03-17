@@ -21,7 +21,7 @@ typedef enum {
     SLOT_MAX_SIZE
 } EquipmentSlot;
 
-static inline const char *EquipmentSlotName(const EquipmentSlot slot)
+static const char *EquipmentSlotName(const EquipmentSlot slot)
 {
     switch (slot) {
         case SLOT_HEAD:    return "Head";
@@ -63,16 +63,27 @@ typedef struct {
 } Item;
 
 typedef struct {
-    ArenaPool   pool;
-    Item       *items[ITEM_MANAGER_CAPACITY];
+    const Item *entries[ITEM_MANAGER_CAPACITY];
     u32         count;
+} SlotBucket;
+
+typedef struct {
+    SlotBucket buckets[SLOT_MAX_SIZE];
+} ItemTable;
+
+typedef struct {
+    ArenaPool        pool;
+    Item            *items[ITEM_MANAGER_CAPACITY];
+    u32              count;
+    ItemTable       *table;
 } ItemManager;
 
 ItemManager    *CreateItemManager(void);
 void            DestroyItemManager(ItemManager *manager);
 
+void            BuildItemTable(ItemManager *manager);
+
 const Item     *ItemManagerFind(const ItemManager *manager, u32 id);
 void            LoadItemsFromFile(ItemManager *manager, const char *filename);
-
 
 #endif

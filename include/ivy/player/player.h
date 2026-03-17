@@ -4,7 +4,7 @@
 #include "ivy/virtual.h"
 #include "ivy/collision.h"
 #include "ivy/inventory/inventory.h"
-#include "ivy/player/portrait.h"
+#include "ivy/player/player_portrait.h"
 #include "ivy/player/player_internal.h"
 
 struct Player {
@@ -16,7 +16,7 @@ struct Player {
     Portrait            portrait;
 };
 
-Player  *InitPlayer(u32 spawnX, u32 spawnY, u32 tileSize);
+Player  *InitPlayer(Vector2 spawnPoint);
 void     UpdatePlayer(Player *player, float frameTime, const Collision *collision, u32 tileSize);
 void     DrawPlayer(const Player *player, const VirtualResolution *vr);
 void     DrawPlayerDebug(const Player *player);

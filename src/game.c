@@ -11,20 +11,24 @@ Game GameInit(const u32 sw, const u32 sh)
     game.screen.screenWidth  = sw;
     game.screen.screenHeight = sh;
 
+    // VIEWPORT
     game.viewport = InitVirtualScreen(sw, sh);
     SetTextureFilter(game.viewport.target.texture, TEXTURE_FILTER_POINT);
 
+    // FONTS
     game.fonts[IVY_FONT_PRIMARY]   = LoadFontBin(PRIMARY_FONT_PATH, LOAD_FONT_SIZE);
     game.fonts[IVY_FONT_SECONDARY] = LoadFontBin(SECONDARY_FONT_PATH, LOAD_FONT_SIZE);
-
     SetTextureFilter(game.fonts[IVY_FONT_PRIMARY].texture,   TEXTURE_FILTER_BILINEAR);
     SetTextureFilter(game.fonts[IVY_FONT_SECONDARY].texture, TEXTURE_FILTER_BILINEAR);
 
+    // CURSORS
     game.cursors[IVY_CURSOR_PRIMARY]   = LoadTextureFromImageBin(PRIMARY_CURSOR_PATH);
     game.cursors[IVY_CURSOR_SECONDARY] = LoadTextureFromImageBin(SECONDARY_CURSOR_PATH);
-
     SetTextureFilter(game.cursors[IVY_CURSOR_PRIMARY],   TEXTURE_FILTER_POINT);
     SetTextureFilter(game.cursors[IVY_CURSOR_SECONDARY], TEXTURE_FILTER_POINT);
+
+    // LOCALE
+    game.locale = LocaleLoad("assets/i18n/en.bin");
 
     SceneManager *sm = &game.sceneManager;
     *sm = (SceneManager) {
@@ -58,8 +62,8 @@ void GameUpdate(Game *game)
     if (IsWindowResized()) {
         game->screen.screenWidth  = GetScreenWidth();
         game->screen.screenHeight = GetScreenHeight();
-        UpdateVirtualResolution(&game->viewport,
-            game->screen.screenWidth, game->screen.screenHeight);
+
+        UpdateVirtualResolution(&game->viewport, game->screen.screenWidth, game->screen.screenHeight);
         SetTextureFilter(game->viewport.target.texture, TEXTURE_FILTER_POINT);
     }
 
@@ -67,8 +71,7 @@ void GameUpdate(Game *game)
         game->sceneManager.activeScene.Update(game);
 
     if (game->sceneManager.sceneChanged) {
-        BeginSceneTransition(&game->sceneManager,
-            game->sceneManager.activeScene.type);
+        BeginSceneTransition(&game->sceneManager, game->sceneManager.activeScene.type);
         game->sceneManager.sceneChanged = false;
     }
 
@@ -99,4 +102,5 @@ void GameDestroy(const Game *game)
     UnloadTexture(game->cursors[IVY_CURSOR_PRIMARY]);
     UnloadTexture(game->cursors[IVY_CURSOR_SECONDARY]);
     UnloadRenderTexture(game->viewport.target);
+    LocaleUnload(game->locale);
 }

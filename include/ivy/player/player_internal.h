@@ -5,10 +5,13 @@
 #include "ivy/collision.h"
 #include "raylib/raylib.h"
 
-#define BASE_MOVE_DURATION      0.42f
-#define RUN_SPEED_MULTIPLIER    0.595f
-#define WALK_SPEED_MULTIPLIER   1.0f
-#define DIR_INPUT_DELAY         6
+#define BASE_MOVE_DURATION      1.0f
+#define SPEED_NORMAL            1.0f
+#define SPEED_DASH              1.25f
+#define MAX_SPEED_NORMAL        4.5f
+#define MAX_SPEED_DASH          6.0f
+
+#define DIR_TURN_DELAY          0.08f
 
 #define ATTACK_ANIM_SPEED       0.08f
 #define ATTACK_ANIM_START_COL   6
@@ -39,6 +42,11 @@ typedef enum {
     ACTION_ATTACK
 } PlayerAction;
 
+typedef enum {
+    MOVEMENT_NORMAL,
+    MOVEMENT_DASH
+} MovementType;
+
 typedef struct {
     Texture2D       hairTexture;
     Texture2D       headTexture;
@@ -61,10 +69,12 @@ typedef struct {
     Rectangle   collisionBox;
     float       moveDuration;
     float       moveTimer;
-    u32         dirInputCount;
+    float       turnTimer;
     bool        isMoving;
     bool        justTurned;
     bool        isHoldingKey;
+    MovementType movement;
+    float       baseSpeed;
 } PlayerMovement;
 
 typedef struct {
@@ -81,12 +91,12 @@ typedef struct {
 
 u32     GetSpriteRow(const Player *player);
 u32     GetSpriteCol(const Player *player);
-float   GetMoveDuration(PlayerAction action);
+float   GetMoveDuration(MovementType movement, float baseSpeed);
 
 bool    GetMovementInput(Vector2 *outDir, Direction *outFacing);
 bool    DirectionKeyPressed(Direction dir);
 bool    IsTileSolid(Vector2 tilePos, const Collision *collision, u32 tileSize);
-bool    StartMoving(Player *player, Vector2 inputDir, Direction nextDir, bool isRunning, const Collision *collision, u32 tileSize);
+bool    StartMoving(Player *player, Vector2 inputDir, Direction nextDir, MovementType movement, const Collision *collision, u32 tileSize);
 
 void    UpdatePlayerMovement(Player *player, float frameTime, const Collision *collision, u32 tileSize);
 void    UpdateAnimation(Player *player, float frameTime);

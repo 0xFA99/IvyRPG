@@ -1,20 +1,14 @@
 #include "ivy/player/player.h"
 #include "ivy/utils.h"
+#include "ivy/game.h"
 
-#include <assert.h>
 #include <stdlib.h>
 #include <math.h>
 
-#define PLAYER_FRAME_SIZE   64.0f
-#define PLAYER_COL_W        20.0f
-#define PLAYER_COL_H        30.0f
-#define PLAYER_COL_OX       (-10.0f)
-#define PLAYER_COL_OY       (-15.0f)
-
-Player *InitPlayer(const u32 spawnX, const u32 spawnY, const u32 tileSize)
+Player *InitPlayer(const Vector2 spawnPoint)
 {
     Player *player = calloc(1, sizeof(Player));
-    assert(player && "[ERROR] Failed to allocate memory for Player!");
+    IVY_ASSERT(player, "Failed to allocate Player");
 
     PlayerGraphics *g = &player->graphics;
     g->hairTexture    = LoadTextureFromImageBin("assets/player/character/base/base_equip_hair.bin");
@@ -30,19 +24,29 @@ Player *InitPlayer(const u32 spawnX, const u32 spawnY, const u32 tileSize)
     g->action    = ACTION_IDLE;
     g->direction = DIRECTION_FRONT;
 
-    const float ts   = (float)tileSize;
-    const float half = ts * 0.5f;
-
     PlayerMovement *m     = &player->movement;
-    m->tilePosition       = (Vector2){ (float)spawnX, (float)spawnY };
+    m->tilePosition       = spawnPoint;
     m->targetTilePosition = m->tilePosition;
-    m->position           = (Vector2){ (float)spawnX * ts + half, (float)spawnY * ts + half };
+    m->position           = (Vector2){
+        .x = spawnPoint.x * DEFAULT_TILE_SIZE + DEFAULT_TILE_HALF,
+        .y = spawnPoint.y * DEFAULT_TILE_SIZE + DEFAULT_TILE_HALF
+    };
 
     m->collisionBox = (Rectangle){
-        m->position.x + PLAYER_COL_OX, m->position.y + PLAYER_COL_OY,
-        PLAYER_COL_W, PLAYER_COL_H
+        .x      = m->position.x - DEFAULT_TILE_SIZE,
+        .y      = m->position.y - DEFAULT_TILE_SIZE,
+        .width  = DEFAULT_TILE_SIZE,
+        .height = DEFAULT_TILE_SIZE
     };
+    
     m->moveDuration = BASE_MOVE_DURATION;
+    m->movement      = MOVEMENT_NORMAL;
+    m->baseSpeed     = 4.0f;
+    m->isMoving      = false;
+    m->justTurned    = false;
+    m->isHoldingKey  = false;
+    m->turnTimer     = 0.0f;
+    m->moveTimer     = 0.0f;
 
     player->animation.frameDirection = 1;
     player->inventory = CreateInventory();
@@ -89,8 +93,8 @@ void UpdatePlayer(Player *player, const float frameTime,
 
 void UpdatePlayerCollision(Player *player)
 {
-    player->movement.collisionBox.x = player->movement.position.x + PLAYER_COL_OX;
-    player->movement.collisionBox.y = player->movement.position.y + PLAYER_COL_OY;
+    player->movement.collisionBox.x = player->movement.position.x - DEFAULT_TILE_HALF;
+    player->movement.collisionBox.y = player->movement.position.y - DEFAULT_TILE_HALF;
 }
 
 void DrawPlayer(const Player *player, const VirtualResolution *vr)
@@ -98,20 +102,20 @@ void DrawPlayer(const Player *player, const VirtualResolution *vr)
     (void)vr;
 
     const Rectangle src = {
-        .x      = (float)GetSpriteCol(player) * PLAYER_FRAME_SIZE,
-        .y      = (float)GetSpriteRow(player) * PLAYER_FRAME_SIZE,
-        .width  = PLAYER_FRAME_SIZE,
-        .height = PLAYER_FRAME_SIZE
+        .x      = (float)GetSpriteCol(player) * CHARACTER_FRAME_SIZE,
+        .y      = (float)GetSpriteRow(player) * CHARACTER_FRAME_SIZE,
+        .width  = CHARACTER_FRAME_SIZE,
+        .height = CHARACTER_FRAME_SIZE
     };
 
     const Rectangle dst = {
         .x      = floorf(player->movement.position.x),
         .y      = floorf(player->movement.position.y),
-        .width  = PLAYER_FRAME_SIZE,
-        .height = PLAYER_FRAME_SIZE
+        .width  = CHARACTER_FRAME_SIZE,
+        .height = CHARACTER_FRAME_SIZE
     };
 
-    const Vector2 origin = { PLAYER_FRAME_SIZE * 0.5f, PLAYER_FRAME_SIZE * 0.75f };
+    const Vector2 origin = { CHARACTER_FRAME_SIZE * 0.5f, CHARACTER_FRAME_SIZE * 0.75f };
 
     DrawTexturePro(player->graphics.bodyTexture, src, dst, origin, 0.0f, WHITE);
 
@@ -124,7 +128,7 @@ void DrawPlayer(const Player *player, const VirtualResolution *vr)
 
     for (u32 i = 0; i < orderCount; i++) {
         const EquipmentSlot slot = drawOrder[i];
-        if (!(player->equipment.slotMask & (1u << slot))) continue;
+        if (!(player->equipment.slotMask & 1u << slot)) continue;
 
         const Item *item = player->equipment.slots[slot];
         if (!item || item->type != ITEM_EQUIPMENT) continue;
@@ -136,7 +140,7 @@ void DrawPlayer(const Player *player, const VirtualResolution *vr)
     DrawTexturePro(player->graphics.headTexture, src, dst, origin, 0.0f, WHITE);
     DrawTexturePro(player->graphics.hairTexture, src, dst, origin, 0.0f, WHITE);
 
-    if (player->equipment.slotMask & (1u << SLOT_HEAD)) {
+    if (player->equipment.slotMask & 1u << SLOT_HEAD) {
         const Item *item = player->equipment.slots[SLOT_HEAD];
         if (item && item->type == ITEM_EQUIPMENT && item->data.equipment.charTexture.id != 0)
             DrawTexturePro(item->data.equipment.charTexture, src, dst, origin, 0.0f, WHITE);
@@ -168,7 +172,7 @@ void DestroyPlayer(Player *player)
 {
     if (!player) return;
 
-    PlayerGraphics *g = &player->graphics;
+    const PlayerGraphics *g = &player->graphics;
     UnloadTexture(g->hairTexture);
     UnloadTexture(g->headTexture);
     UnloadTexture(g->bodyTexture);

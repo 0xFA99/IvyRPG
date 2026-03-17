@@ -40,7 +40,7 @@ ivy_add_library(ivy_tilemap
 ivy_add_library(ivy_player
         src/player/player.c
         src/player/player_internal.c
-        src/player/portrait.c
+        src/player/player_portrait.c
 )
 target_link_libraries(ivy_player PUBLIC ivy_tilemap)
 
@@ -63,8 +63,13 @@ add_executable(${PROJECT_NAME}
         src/inventory/inventory.c
         src/inventory/inventory_ui.c
 
-        src/allocator/linear.c
-        src/allocator/pool.c
+        src/arena/linear.c
+        src/arena/pool.c
+
+        src/npc/npc.c
+        src/npc/npc_internal.c
+
+        src/locale.c
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE ivy_scene ${PLATFORM_LIBS})

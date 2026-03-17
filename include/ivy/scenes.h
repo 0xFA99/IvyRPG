@@ -6,6 +6,7 @@
 #include "ivy/collision.h"
 #include "ivy/item.h"
 #include "ivy/inventory/inventory_ui.h"
+#include "ivy/npc/npc.h"
 
 #include "raylib/raylib.h"
 
@@ -34,11 +35,13 @@ typedef struct {
     Player         *player;
     ItemManager    *itemManager;
     InventoryUI     inventoryUI;
+    NPCManager     *npcManager;
 } SceneGameplayData;
 
 typedef struct {
     int     selectedIndex;
     float   cursorY;
+    u32     localeIndex;
 } SceneOptionsData;
 
 typedef struct Scene {

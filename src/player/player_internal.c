@@ -54,7 +54,10 @@ void UpdateAnimation(Player *player, const float frameTime)
         return;
     }
 
-    const float animSpeed = player->movement.moveDuration / 3.0f;
+    const float realMoveSpeed = player->movement.baseSpeed + (player->movement.movement == MOVEMENT_DASH ? 1.0f : 0.0f);
+    const float threshold     = 18.0f - realMoveSpeed * 2.0f;
+    const float animSpeed     = threshold / 90.0f;
+
     anim->frameTimer += frameTime;
 
     if (anim->frameTimer >= animSpeed)
@@ -78,11 +81,11 @@ void UpdateAnimation(Player *player, const float frameTime)
 
 Rectangle GetAttackHitbox(const Player *player)
 {
-    const float cx      = player->movement.position.x;
-    const float cy      = player->movement.position.y;
-    const float hw      = ATTACK_HITBOX_W * 0.5f;
-    const float hh      = ATTACK_HITBOX_H * 0.5f;
-    const float reach   = ATTACK_HITBOX_REACH;
+    const float cx    = player->movement.position.x;
+    const float cy    = player->movement.position.y;
+    const float hw    = ATTACK_HITBOX_W * 0.5f;
+    const float hh    = ATTACK_HITBOX_H * 0.5f;
+    const float reach = ATTACK_HITBOX_REACH;
 
     switch (player->graphics.direction)
     {
@@ -107,9 +110,9 @@ void UpdateAttack(Player *player, const float frameTime, const Collision *collis
 
         if (anim->attackFrame >= ATTACK_ANIM_FRAMES)
         {
-            anim->attackFrame      = 0;
-            anim->attackHitApplied = false;
-            anim->attackCooldown   = ATTACK_COOLDOWN;
+            anim->attackFrame       = 0;
+            anim->attackHitApplied  = false;
+            anim->attackCooldown    = ATTACK_COOLDOWN;
             player->graphics.action = ACTION_IDLE;
             return;
         }
@@ -172,18 +175,30 @@ bool IsTileSolid(const Vector2 tilePos, const Collision *collision, const u32 ti
     return false;
 }
 
-float GetMoveDuration(const PlayerAction action)
+float GetMoveDuration(const MovementType movement, const float baseSpeed)
 {
-    switch (action)
+    float actualSpeed;
+
+    switch (movement)
     {
-        case ACTION_RUN:  return BASE_MOVE_DURATION * RUN_SPEED_MULTIPLIER;
-        case ACTION_WALK: return BASE_MOVE_DURATION * WALK_SPEED_MULTIPLIER;
-        default:          return BASE_MOVE_DURATION;
+        case MOVEMENT_DASH:
+            actualSpeed = baseSpeed * SPEED_DASH;
+            if (actualSpeed > MAX_SPEED_DASH)
+                actualSpeed = MAX_SPEED_DASH;
+            break;
+        case MOVEMENT_NORMAL:
+        default:
+            actualSpeed = baseSpeed * SPEED_NORMAL;
+            if (actualSpeed > MAX_SPEED_NORMAL)
+                actualSpeed = MAX_SPEED_NORMAL;
+            break;
     }
+
+    return BASE_MOVE_DURATION / actualSpeed;
 }
 
-bool StartMoving(Player *player, const Vector2 inputDir, const Direction nextDir, const bool isRunning,
-                 const Collision *collision, const u32 tileSize)
+bool StartMoving(Player *player, const Vector2 inputDir, const Direction nextDir,
+                 const MovementType movement, const Collision *collision, const u32 tileSize)
 {
     const Vector2 target = {
         player->movement.tilePosition.x + inputDir.x,
@@ -197,9 +212,9 @@ bool StartMoving(Player *player, const Vector2 inputDir, const Direction nextDir
         return false;
     }
 
-    const PlayerAction action = isRunning ? ACTION_RUN : ACTION_WALK;
-    player->graphics.action       = action;
-    player->movement.moveDuration = GetMoveDuration(action);
+    player->movement.movement     = movement;
+    player->graphics.action       = movement == MOVEMENT_DASH ? ACTION_RUN : ACTION_WALK;
+    player->movement.moveDuration = GetMoveDuration(movement, player->movement.baseSpeed);
     player->movement.targetTilePosition = target;
     player->movement.isMoving     = true;
     player->movement.moveTimer    = 0.0f;
@@ -217,42 +232,57 @@ void UpdatePlayerMovement(Player *player, const float frameTime,
     Vector2   inputDir = {0};
     Direction nextDir  = player->graphics.direction;
 
-    const bool hasInput = GetMovementInput(&inputDir, &nextDir);
-    const bool isShift  = IsKeyDown(KEY_LEFT_SHIFT);
+    const bool hasInput        = GetMovementInput(&inputDir, &nextDir);
+    const bool isShift         = IsKeyDown(KEY_LEFT_SHIFT);
+    const MovementType desired = isShift ? MOVEMENT_DASH : MOVEMENT_NORMAL;
 
     player->movement.isHoldingKey = hasInput;
+
+    if (player->movement.isMoving && desired != player->movement.movement)
+    {
+        float progress = player->movement.moveTimer / player->movement.moveDuration;
+        if (progress > 1.0f) progress = 1.0f;
+
+        const float newDuration           = GetMoveDuration(desired, player->movement.baseSpeed);
+        player->movement.moveTimer        = progress * newDuration;
+        player->movement.moveDuration     = newDuration;
+        player->movement.movement         = desired;
+        player->graphics.action           = desired == MOVEMENT_DASH ? ACTION_RUN : ACTION_WALK;
+    }
 
     if (!player->movement.isMoving)
     {
         if (!hasInput)
         {
-            player->movement.dirInputCount  = 0;
-            player->movement.justTurned     = false;
-            player->graphics.action         = ACTION_IDLE;
+            player->movement.turnTimer  = 0.0f;
+            player->movement.justTurned = false;
+            player->graphics.action     = ACTION_IDLE;
         }
         else
         {
             const bool dirChanged = (player->graphics.direction != nextDir);
 
-            if (dirChanged && DirectionKeyPressed(nextDir))
+            if (dirChanged)
             {
-                player->graphics.direction      = nextDir;
-                player->graphics.action         = ACTION_IDLE;
-                player->movement.dirInputCount  = 0;
-                player->movement.justTurned     = true;
+                player->graphics.direction  = nextDir;
+                player->graphics.action     = ACTION_IDLE;
+                player->movement.turnTimer  = 0.0f;
+                player->movement.justTurned = true;
+            }
+            else if (player->movement.justTurned)
+            {
+                player->movement.turnTimer += frameTime;
+
+                if (player->movement.turnTimer >= DIR_TURN_DELAY)
+                {
+                    player->movement.turnTimer  = 0.0f;
+                    player->movement.justTurned = false;
+                    StartMoving(player, inputDir, nextDir, desired, collision, tileSize);
+                }
             }
             else
             {
-                player->movement.dirInputCount++;
-                const bool sameDir     = !dirChanged;
-                const bool delayPassed = player->movement.dirInputCount > DIR_INPUT_DELAY;
-
-                if (sameDir || (!player->movement.justTurned || delayPassed))
-                {
-                    player->movement.dirInputCount  = 0;
-                    player->movement.justTurned     = false;
-                    StartMoving(player, inputDir, nextDir, isShift, collision, tileSize);
-                }
+                StartMoving(player, inputDir, nextDir, desired, collision, tileSize);
             }
         }
     }
@@ -272,42 +302,42 @@ void UpdatePlayerMovement(Player *player, const float frameTime,
 
             if (stillHolding)
             {
-                const Vector2 nextTarget = {
+                const bool freshShift       = IsKeyDown(KEY_LEFT_SHIFT);
+                const MovementType nextMove = freshShift ? MOVEMENT_DASH : MOVEMENT_NORMAL;
+                const Vector2 nextTarget    = {
                     player->movement.tilePosition.x + freshDir.x,
                     player->movement.tilePosition.y + freshDir.y
                 };
 
                 if (!IsTileSolid(nextTarget, collision, tileSize))
                 {
-                    const PlayerAction nextAction = isShift ? ACTION_RUN : ACTION_WALK;
                     player->movement.targetTilePosition = nextTarget;
-                    player->movement.moveTimer     -= player->movement.moveDuration;
-                    player->movement.moveDuration   = GetMoveDuration(nextAction);
-                    player->graphics.action         = nextAction;
-                    player->graphics.direction      = freshFacing;
+                    player->movement.moveTimer         -= player->movement.moveDuration;
+                    player->movement.moveDuration       = GetMoveDuration(nextMove, player->movement.baseSpeed);
+                    player->movement.movement           = nextMove;
+                    player->graphics.action             = (nextMove == MOVEMENT_DASH) ? ACTION_RUN : ACTION_WALK;
+                    player->graphics.direction          = freshFacing;
 
                     t = player->movement.moveTimer / player->movement.moveDuration;
                 }
                 else
                 {
-                    player->movement.isMoving   = false;
-                    player->graphics.action     = ACTION_IDLE;
+                    player->movement.isMoving = false;
+                    player->graphics.action   = ACTION_IDLE;
                 }
             }
             else
             {
-                player->movement.isMoving       = false;
-                player->movement.moveTimer      = 0.0f;
-                player->movement.dirInputCount  = 0;
-                player->graphics.action         = ACTION_IDLE;
+                player->movement.isMoving  = false;
+                player->movement.moveTimer = 0.0f;
+                player->graphics.action    = ACTION_IDLE;
                 t = 1.0f;
             }
         }
 
         if (t > 1.0f) t = 1.0f;
 
-        const float halfTs = ts * 0.5f;
-
+        const float halfTs     = ts * 0.5f;
         const Vector2 startPos = {
             player->movement.tilePosition.x * ts + halfTs,
             player->movement.tilePosition.y * ts + halfTs
