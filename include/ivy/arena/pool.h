@@ -4,7 +4,6 @@
 #include "ivy/types.h"
 
 #include <stddef.h>
-#include <stdint.h>
 #include <stdbool.h>
 
 
