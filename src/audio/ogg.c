@@ -11,6 +11,10 @@
 
 #include <string.h>
 
+#ifndef IVY_DEBUG
+#include <stdlib.h>
+#endif
+
 #define MUSIC_AUDIO_OGG     2
 #define DEFAULT_BITRATE_OGG 16
 

@@ -22,11 +22,12 @@ set(RAYLIB_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
 include(CheckIPOSupported)
 check_ipo_supported(RESULT ipo_supported OUTPUT error)
 
-if(ipo_supported)
+if(ipo_supported AND (CMAKE_BUILD_TYPE STREQUAL "Release" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo"))
     set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
-    message(STATUS "LTO/IPO is supported and enabled.")
+    message(STATUS "LTO/IPO is supported and enabled for Release.")
 else()
-    message(WARNING "LTO is not supported by your compiler: ${error}")
+    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION FALSE)
+    message(STATUS "LTO disabled for Debug/Sanitizer compatibility.")
 endif()
 
 if(WIN32)
@@ -148,8 +149,6 @@ ivy_module(entities
         src/entities/player.c
 )
 
-target_link_libraries(ivy_entities PUBLIC ivy_graphics)
-
 add_executable(${PROJECT_NAME} src/main.c)
 
 target_include_directories(${PROJECT_NAME} PRIVATE ${INCLUDE_DIR})
@@ -193,7 +192,7 @@ add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
 
         COMMENT "Copying header.bin and data.bin..."
 )
-# ─── Installation ─────────────────────────────────────────────────────────────
+
 install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin)
 install(FILES
         "${ASSETS_DIR}/header.bin"
@@ -202,7 +201,6 @@ install(FILES
         OPTIONAL
 )
 
-# ─── Export Info ──────────────────────────────────────────────────────────────
 message(STATUS "IvyRPG v${PROJECT_VERSION}")
 message(STATUS "  C Standard : C${CMAKE_C_STANDARD}")
 message(STATUS "  Build Type : ${CMAKE_BUILD_TYPE}")

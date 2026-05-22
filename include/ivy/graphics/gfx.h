@@ -26,7 +26,7 @@ Vector2     Ivy_Gfx_GetScreenPos(const IvyVirtualScreen *vr, Vector2 vp);
 
 IVY_INLINE void Ivy_Gfx_VirtualDraw(const IvyVirtualScreen *vr)
 {
-    IVY_ASSERT(vr != NULL, "[Gfx](IvyVirtualScreen) Instance is NULL");
+    IVY_ASSERT(vr, "[Gfx](IvyVirtualScreen) Instance is NULL");
     DrawTexturePro( vr->target.texture, vr->source, vr->destination, (Vector2){ 0, 0 }, 0.0f, WHITE);
 }
 

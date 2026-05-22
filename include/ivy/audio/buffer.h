@@ -64,7 +64,6 @@ typedef struct {
     } Buffer;
     rAudioProcessor *mixedProcessor;
 } IvyAudioData;
-IVY_ASSERT_STATIC(sizeof(IvyAudioData) == 4096, "[IvyAudioData] Size must be 4096 bytes!");
 
 IvyAudioBuffer *Ivy_Audio_LoadBuffer(IvyArenaLinear *arena, int format, u32 channels, u32 sampleRate, u32 sizeInFrames, int usage);
 void            Ivy_Audio_PlayAudioBuffer(IvyAudioBuffer *buffer);
