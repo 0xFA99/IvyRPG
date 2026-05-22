@@ -4,6 +4,9 @@
 #include "ivy/systems/locale_manager.h"
 #include "ivy/systems/scene_manager.h"
 #include "ivy/scenes/title.h"
+
+#include "ivy/audio/ogg.h"
+#include "ivy/audio/stream.h"
 #include "ivy/graphics/gfx.h"
 #include "ivy/utils/file_ids.h"
 
@@ -38,6 +41,9 @@ void Ivy_Scene_TitleInit(IvyGame *g)
 
     sd->targetY = 0.0f;
 
+    sd->music = Ivy_Audio_LoadMusicOGG(&g->arenas[IVY_ARENA_MAIN], g->assets, ASSET_MUSIC_BARREN_AMBIENCE_OGG, 199769);
+    PlayMusicStream(sd->music);
+
     sd->sound = Ivy_Audio_LoadSoundWav(&g->arenas[IVY_ARENA_MAIN], g->assets, ASSET_AUDIO_CURSOR_WAV);
     g->scenes->actionScene->data = sd;
 }
@@ -45,6 +51,8 @@ void Ivy_Scene_TitleInit(IvyGame *g)
 void Ivy_Scene_TitleUpdate(IvyGame *g)
 {
     IvySceneTitleData *sd = g->scenes->actionScene->data;
+
+    Ivy_Audio_UpdateMusicOGG(&sd->music);
 
     // Navigation (branchless modulo)
     const int dir = IsKeyPressed(KEY_DOWN) - IsKeyPressed(KEY_UP);
@@ -139,6 +147,7 @@ void Ivy_Scene_TitleUnload(IvySceneManager *sm)
 
     const IvySceneTitleData *sd = sm->actionScene->data;
     rlUnloadTexture(sd->background.id);
+    Ivy_Audio_UnloadStream(&sd->music);
     Ivy_Audio_UnloadSound(&sd->sound);
 
     sm->actionScene->data = NULL;

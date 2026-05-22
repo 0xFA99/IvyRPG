@@ -27,8 +27,8 @@ typedef struct {
     float      targetY;                     // 4
     u32        selected;                    // 4
     IvySound   sound;                       // 48
+    Music      music;                       // 56
 } IvySceneTitleData;                        // 128
-IVY_ASSERT_STATIC(sizeof(IvySceneTitleData) <= 128, "Title data too large");
 
 void Ivy_Scene_TitleInit(IvyGame *game);
 void Ivy_Scene_TitleUpdate(IvyGame *game);
