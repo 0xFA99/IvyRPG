@@ -1,87 +1,30 @@
 #include "ivy/arena/linear.h"
-#include "ivy/game.h"
 
 #include <stdlib.h>
+#include <string.h>
 
-
-static int IsPowerOfTwo(const size_t x)
+void Ivy_Arena_LinearInit(IvyArenaLinear *arena, usize capacity)
 {
-    return x > 0 && (x & x - 1) == 0;
-}
+    IVY_ASSERT(arena != NULL, "[Arena](Linear) Instance is NULL!");
 
-static size_t AlignForward(const size_t offset, const size_t align)
-{
-    IVY_ASSERT(IsPowerOfTwo(align), "alignment must be power of two");
-    return offset + align - 1 & ~(align - 1);
-}
-
-bool ArenaLinearInit(ArenaLinear *arena, size_t capacity)
-{
-    IVY_ASSERT(arena != NULL, "arena is NULL");
-    if (capacity == 0) {
+    if (IVY_UNLIKELY(capacity == 0)) {
         capacity = LINEAR_DEFAULT_CAPACITY;
     }
 
     arena->buffer = (u8 *)malloc(capacity);
-    if (arena->buffer == NULL) return false;
+    IVY_CHECK(arena->buffer != NULL, "[Arena](Linear) Failed to allocate %zu bytes", capacity);
 
     arena->capacity = capacity;
     arena->offset   = 0;
     arena->owned    = true;
-    return true;
 }
 
-void *ArenaLinearAlloc(ArenaLinear *arena, const size_t size)
+void Ivy_Arena_LinearInitStatic(IvyArenaLinear *restrict arena, void *restrict buffer, const usize size)
 {
-    return ArenaLinearInitAlign(arena, size, LINEAR_DEFAULT_ALIGNMENT);
-}
+    IVY_ASSERT(arena != NULL, "[Arena](Linear) Static init with NULL arena!");
+    IVY_ASSERT(buffer != NULL, "[Arena](Linear) Static init with NULL buffer!");
 
-void *ArenaLinearInitAlign(ArenaLinear *arena, const size_t size, const size_t align)
-{
-    IVY_ASSERT(arena != NULL, "arena is NULL");
-    IVY_ASSERT(IsPowerOfTwo(align), "alignment must be power of two");
-
-    if (arena->buffer == NULL) return NULL;
-    if (size == 0) return NULL;
-
-    const size_t aligned_offset = AlignForward(arena->offset, align);
-
-    if (aligned_offset > arena->capacity || size > arena->capacity - aligned_offset) {
-        return NULL;
-    }
-
-    const size_t new_offset = aligned_offset + size;
-    arena->offset = new_offset;
-
-    return arena->buffer + aligned_offset;
-}
-
-void ArenaLinearDestroy(ArenaLinear *arena)
-{
-    IVY_ASSERT(arena != NULL, "arena is NULL");
-    if (arena->owned && arena->buffer != NULL) free(arena->buffer);
-
-    arena->buffer   = NULL;
-    arena->capacity = 0;
-    arena->offset   = 0;
-    arena->owned    = false;
-}
-
-ArenaLinearSnapshot ArenaLinearGetSnapshot(const ArenaLinear *arena)
-{
-    IVY_ASSERT(arena != NULL, "arena is NULL");
-
-    ArenaLinearSnapshot snap;
-    snap.offset = arena->offset;
-
-    return snap;
-}
-
-void ArenaLinearInitStatic(ArenaLinear *arena, void *buffer, const size_t size)
-{
-    IVY_ASSERT(arena != NULL, "arena is NULL");
-    IVY_ASSERT(buffer != NULL, "buffer is NULL");
-    IVY_ASSERT(size > 0, "size must be > 0");
+    IVY_CHECK(size > 0, "[Arena](Linear) Static init with zero size!", NULL);
 
     arena->buffer   = (u8 *)buffer;
     arena->capacity = size;
@@ -89,8 +32,40 @@ void ArenaLinearInitStatic(ArenaLinear *arena, void *buffer, const size_t size)
     arena->owned    = false;
 }
 
-void ArenaLinearReset(ArenaLinear *arena)
+void Ivy_Arena_LinearDestroy(IvyArenaLinear *arena)
 {
-    IVY_ASSERT(arena != NULL, "arena is NULL");
+    IVY_ASSERT(arena != NULL, "[Arena](Linear) Destroy NULL instance!");
+
+    // only free if we own the buffer
+    if (IVY_LIKELY(arena->owned && arena->buffer != NULL)) {
+        free(arena->buffer);
+    }
+
+    memset(arena, 0, sizeof(IvyArenaLinear));
+}
+
+void Ivy_Arena_LinearReset(IvyArenaLinear *arena)
+{
+    IVY_ASSERT(arena != NULL, "[Arena](Linear) Reset NULL instance!");
     arena->offset = 0;
+}
+
+IvyArenaLinearSnapshot Ivy_Arena_LinearGetSnapshot(const IvyArenaLinear *arena)
+{
+    IVY_ASSERT(arena != NULL, "[Arena](Linear) GetSnapshot NULL instance!");
+    return (IvyArenaLinearSnapshot){ .offset = arena->offset };
+}
+
+void Ivy_Arena_LinearRestore(IvyArenaLinear *arena, const IvyArenaLinearSnapshot snap)
+{
+    IVY_ASSERT(arena != NULL, "[Arena](Linear) Restore NULL instance!");
+
+    IVY_ENSURE(snap.offset <= arena->capacity);
+
+    // roll back
+    IVY_ASSERT(snap.offset <= arena->offset,
+               "[Arena](Linear) Restore point (%zu) is ahead of current offset (%zu)!",
+               snap.offset, arena->offset);
+
+    arena->offset = snap.offset;
 }
