@@ -1,6 +1,9 @@
 #include "ivy/audio/stream.h"
 #include "ivy/audio/buffer.h"
 
+#define STB_VORBIS_HEADER_ONLY
+#include "external/stb_vorbis.c"
+
 AudioStream Ivy_Audio_LoadStream(IvyArenaLinear *arena, const unsigned int sampleRate,
                                  const unsigned int sampleSize, const unsigned int channels)
 {
@@ -32,4 +35,20 @@ AudioStream Ivy_Audio_LoadStream(IvyArenaLinear *arena, const unsigned int sampl
     stream.buffer->looping = true;
 
     return stream;
+}
+
+void Ivy_Audio_UnloadStream(const Music *music)
+{
+    IvyAudioData *audioData = Ivy_Audio_GetAudioData();
+
+    IvyAudioBuffer *buffer = music->stream.buffer;
+
+    ma_mutex_lock(&audioData->System.lock);
+        Ivy_Audio_StopAudioBuffer(buffer);
+    ma_mutex_unlock(&audioData->System.lock);
+
+    stb_vorbis_seek_start((stb_vorbis *)music->ctxData);
+
+    Ivy_Audio_UnloadBuffer(buffer);
+    stb_vorbis_close((stb_vorbis *)music->ctxData);
 }
