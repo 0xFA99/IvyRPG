@@ -48,7 +48,6 @@ void Ivy_Scene_GameplayInit(IvyGame *game)
     gd->menu.selected = 0;
     gd->menu.sound = Ivy_Audio_LoadSoundWav(&game->arenas[IVY_ARENA_MAIN], game->assets, ASSET_AUDIO_CURSOR_WAV);
 
-    // arena required 192560 bytes (hasil debug :P)
     gd->music = Ivy_Audio_LoadMusicOGG(&game->arenas[IVY_ARENA_MAIN], game->assets, ASSET_MUSIC_POINT_AND_CLICK_OGG, 192560);
 
     Ivy_Audio_PlayAudioBuffer(gd->music.stream.buffer);
