@@ -1,1 +1,0 @@
-#include "ivy/npc/npc_internal.h"
