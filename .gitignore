@@ -6,3 +6,12 @@ cmake-build-default/
 cmake-build-release/
 tools/
 development/
+assets/audio/
+assets/cursors/
+assets/fonts/
+assets/locales/
+assets/maps/
+assets/textures/
+assets/items.bin
+assets/Tilesets.dds
+ivy_tools/
