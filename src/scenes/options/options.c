@@ -13,7 +13,7 @@ extern void Options_DrawOptionsBackground(IvyGame *restrict game, IvySceneOption
 
 void Ivy_Scene_OptionsInit(IvyGame *game)
 {
-    IvySceneOptionsData *optionsData = Ivy_Arena_LinearAllocZero(&game->arenas[IVY_ARENA_MAIN], sizeof(*optionsData));
+    IvySceneOptionsData *optionsData = Ivy_Arena_LinearAllocZero(&game->arena, sizeof(*optionsData));
     IVY_ENSURE(optionsData);
 
     Options_ReloadMenuStrings(optionsData, game->locale);
@@ -25,7 +25,7 @@ void Ivy_Scene_OptionsInit(IvyGame *game)
     optionsData->keybindTargetY      = 0.0f;
     optionsData->waitingForKey       = false;
 
-    optionsData->sound = Ivy_Audio_LoadSoundWav(&game->arenas[IVY_ARENA_MAIN], game->assets, ASSET_AUDIO_CURSOR_WAV);
+    optionsData->sound = Ivy_Audio_LoadSoundWav(&game->arena, game->assets, ASSET_AUDIO_CURSOR_WAV);
 
     game->scenes->actionScene->data = optionsData;
 }

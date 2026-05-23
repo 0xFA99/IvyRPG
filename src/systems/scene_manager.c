@@ -39,9 +39,9 @@ static void Ivy_SceneManager_Load(IvyGame *game, const IvySceneType nextType)
     if (IVY_LIKELY(game->scenes->actionScene && game->scenes->actionScene->table->Unload))
         game->scenes->actionScene->table->Unload(game->scenes);
 
-    Ivy_Arena_LinearRestore(&game->arenas[IVY_ARENA_MAIN], game->scenes->snapshot);
+    Ivy_Arena_LinearRestore(&game->arena, game->scenes->snapshot);
 
-    IvyScene *scene = Ivy_Arena_LinearAllocZero(&game->arenas[IVY_ARENA_MAIN], sizeof(IvyScene));
+    IvyScene *scene = Ivy_Arena_LinearAllocZero(&game->arena, sizeof(IvyScene));
     IVY_ENSURE(scene != NULL);
 
     game->scenes->actionScene = scene;
@@ -73,10 +73,10 @@ IvySceneManager *Ivy_SceneManager_Init(IvyGame *restrict game, IvyAssetManager *
 {
     IVY_ASSERT(game != NULL, "[SceneManager] Arena not found!");
 
-    IvySceneManager *sceneManager = Ivy_Arena_LinearAllocZero(&game->arenas[IVY_ARENA_MAIN], sizeof(IvySceneManager));
+    IvySceneManager *sceneManager = Ivy_Arena_LinearAllocZero(&game->arena, sizeof(IvySceneManager));
     IVY_ENSURE(sceneManager != NULL);
 
-    sceneManager->snapshot = Ivy_Arena_LinearGetSnapshot(&game->arenas[IVY_ARENA_MAIN]);
+    sceneManager->snapshot = Ivy_Arena_LinearGetSnapshot(&game->arena);
     game->assets = assets;
     game->scenes = sceneManager;
 

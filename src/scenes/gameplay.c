@@ -25,15 +25,15 @@ void Ivy_Scene_GameplayInit(IvyGame *game)
 {
     IVY_ASSERT(game != NULL, "[Scene Gameplay] Arena not found!");
 
-    IvySceneGameplayData *gd = Ivy_Arena_LinearAllocZero(&game->arenas[IVY_ARENA_MAIN], sizeof(IvySceneGameplayData));
+    IvySceneGameplayData *gd = Ivy_Arena_LinearAllocZero(&game->arena, sizeof(IvySceneGameplayData));
     IVY_ASSERT(gd != NULL, "[Scene Gameplay] Failed to allocate SceneGameplayData!");
 
-    gd->tilemap = Ivy_Tilemap_LoadMap(game->assets, &game->arenas[IVY_ARENA_MAIN], ASSET_MAPS_MAP_1_METADATA_BIN, ASSET_MAPS_MAP_1_VERTEX_BIN);
-    gd->collusionMap = Ivy_Collusion_Load(&game->arenas[IVY_ARENA_MAIN], game->assets);
-    gd->player = Ivy_Player_Init(&game->arenas[IVY_ARENA_MAIN], game->assets, (Vector2){ 10.0f, 16.0f });
+    gd->tilemap = Ivy_Tilemap_LoadMap(game->assets, &game->arena, ASSET_MAPS_MAP_1_METADATA_BIN, ASSET_MAPS_MAP_1_VERTEX_BIN);
+    gd->collusionMap = Ivy_Collusion_Load(&game->arena, game->assets);
+    gd->player = Ivy_Player_Init(&game->arena, game->assets, (Vector2){ 10.0f, 16.0f });
     gd->camera = Ivy_Camera_Init();
 
-    gd->itemManager = Ivy_ItemManager_Init(&game->arenas[IVY_ARENA_MAIN], game->assets);
+    gd->itemManager = Ivy_ItemManager_Init(&game->arena, game->assets);
 
     gd->state = GAMEPLAY_CLOSE_MENU;
 
@@ -46,9 +46,9 @@ void Ivy_Scene_GameplayInit(IvyGame *game)
     }
 
     gd->menu.selected = 0;
-    gd->menu.sound = Ivy_Audio_LoadSoundWav(&game->arenas[IVY_ARENA_MAIN], game->assets, ASSET_AUDIO_CURSOR_WAV);
+    gd->menu.sound = Ivy_Audio_LoadSoundWav(&game->arena, game->assets, ASSET_AUDIO_CURSOR_WAV);
 
-    gd->music = Ivy_Audio_LoadMusicOGG(&game->arenas[IVY_ARENA_MAIN], game->assets, ASSET_MUSIC_POINT_AND_CLICK_OGG, 192560);
+    gd->music = Ivy_Audio_LoadMusicOGG(&game->arena, game->assets, ASSET_MUSIC_POINT_AND_CLICK_OGG, 192560);
 
     Ivy_Audio_PlayAudioBuffer(gd->music.stream.buffer);
 

@@ -6,6 +6,8 @@
 
 #include <stdio.h>
 
+#include "ivy/systems/profile_manager.h"
+
 extern const float  CURSOR_SPEED;
 extern const float  CURSOR_SCALE;
 extern const u32    LOCALE_ASSETS[];
@@ -68,12 +70,16 @@ void Options_ToggleFullscreenMode(const IvyGame *g)
 
 void Options_CycleLocale(IvyGame *restrict g, IvySceneOptionsData *restrict sd)
 {
-    sd->localeIdx = (sd->localeIdx + 1) % LOCALE_COUNT;
-    Ivy_Arena_LinearReset(&g->arenas[IVY_ARENA_LOCALE]);
+    Ivy_Locale_Next(g->locale);
 
-    g->locale = Ivy_Locale_Load(g->assets, LOCALE_ASSETS[sd->localeIdx], &g->arenas[IVY_ARENA_LOCALE]);
+    const u32 nextHash = g->locale->hashID;
+
+    g->saveManager->save->profile.localeID = nextHash;
+
+    Ivy_Locale_Update(g->assets, g->locale, nextHash);
     IVY_ENSURE(g->locale);
 
+    Ivy_SaveManager_Flush(g->saveManager);
     Options_ReloadMenuStrings(sd, g->locale);
 }
 

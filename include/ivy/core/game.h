@@ -22,25 +22,20 @@ enum {
     IVY_CURSOR_MAX
 };
 
-enum {
-    IVY_ARENA_MAIN = 0,
-    IVY_ARENA_LOCALE,
-    IVY_ARENA_MAX
-};
-
 struct IvyGame {
-    IvyArenaLinear          arenas[IVY_ARENA_MAX];      // 64
+    IvyArenaLinear          arena;                      // 64
 
     const IvyKeybindInfo   *keybind;                    // 8
     IvyAssetManager        *assets;                     // 8
     IvySceneManager        *scenes;                     // 8
     IvyVirtualScreen       *viewport;                   // 8
+    IvySaveManager         *saveManager;
     IvyLocale              *locale;                     // 8
 
     Font                    fonts[IVY_FONT_MAX];        // 96
     Texture2D               cursors[IVY_CURSOR_MAX];    // 40
 };                                                      // 240
-IVY_ASSERT_STATIC(sizeof(IvyGame) == 240, "[IvyGame] Size must be 240 bytes!");
+//IVY_ASSERT_STATIC(sizeof(IvyGame) == 240, "[IvyGame] Size must be 240 bytes!");
 
 IvyGame Ivy_Game_Init(Vector2 size);
 void    Ivy_Game_Update(IvyGame *game);

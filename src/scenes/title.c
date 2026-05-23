@@ -26,7 +26,7 @@ static const float CURSOR_SCALE = 0.5f;
 
 void Ivy_Scene_TitleInit(IvyGame *g)
 {
-    IvySceneTitleData *sd = Ivy_Arena_LinearAllocZero(&g->arenas[IVY_ARENA_MAIN], sizeof(*sd));
+    IvySceneTitleData *sd = Ivy_Arena_LinearAllocZero(&g->arena, sizeof(*sd));
     IVY_ENSURE(sd);
 
     sd->background = Ivy_Gfx_LoadTextureDDS(g->assets, ASSET_TEXTURES_BACKGROUND_DDS);
@@ -41,10 +41,10 @@ void Ivy_Scene_TitleInit(IvyGame *g)
 
     sd->targetY = 0.0f;
 
-    sd->music = Ivy_Audio_LoadMusicOGG(&g->arenas[IVY_ARENA_MAIN], g->assets, ASSET_MUSIC_BARREN_AMBIENCE_OGG, 199769);
+    sd->music = Ivy_Audio_LoadMusicOGG(&g->arena, g->assets, ASSET_MUSIC_BARREN_AMBIENCE_OGG, 199769);
     PlayMusicStream(sd->music);
 
-    sd->sound = Ivy_Audio_LoadSoundWav(&g->arenas[IVY_ARENA_MAIN], g->assets, ASSET_AUDIO_CURSOR_WAV);
+    sd->sound = Ivy_Audio_LoadSoundWav(&g->arena, g->assets, ASSET_AUDIO_CURSOR_WAV);
     g->scenes->actionScene->data = sd;
 }
 

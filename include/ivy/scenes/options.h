@@ -33,7 +33,6 @@ typedef struct {
     float       cursorY;                    // 4
     float       targetY;                    // 4
     u32         selected;                   // 4
-    u32         localeIdx;                  // 4
 
     // Keybind popup data
     IvyKeybindState keybindState;           // 4
@@ -42,8 +41,8 @@ typedef struct {
     float           keybindCursorY;         // 4
     float           keybindTargetY;         // 4
     bool            waitingForKey;          // 1
+    char            padding[3];
     IvySound        sound;
-    char            padding[7];             // 7
 } IvySceneOptionsData;                      // 104
 
 void Ivy_Scene_OptionsInit(IvyGame *game);

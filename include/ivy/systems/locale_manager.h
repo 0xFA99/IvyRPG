@@ -39,18 +39,22 @@ typedef enum {
 #define X(name) name,
     LOCALE_LIST
 #undef X
-    LOC_KEY_COUNT
+    IVY_LOCALE_MAX
 } IvyLocaleKey;
 
 struct IvyLocale {
-    const u8   *buffer;         // 8
-    const u32  *offsets;        // 8
-    u32         num_entries;    // 4
-    u32         padding;        // 4
-};                              // 24
+    const u8       *buffer;         // 8
+    const u32      *offsets;        // 8
+    u32             num_entries;    // 4
 
-IvyLocale *Ivy_Locale_Load(IvyAssetManager *mgr, u32 id, IvyArenaLinear *arena);
-void       Ivy_Locale_DebugPrint(const IvyLocale *locale);
+    u32             hashID;
+    IvyLocaleIndex  index;
+};
+
+IvyLocale  *Ivy_Locale_Load(IvyAssetManager *mgr, u32 id, IvyArenaLinear *arena);
+void        Ivy_Locale_Update(IvyAssetManager *restrict assetManager, IvyLocale *restrict locale, u32 id);
+void        Ivy_Locale_Next(IvyLocale *locale);
+void        Ivy_Locale_DebugPrint(const IvyLocale *locale);
 
 IVY_INLINE const char *Ivy_Locale_Tr(const IvyLocale *loc, const IvyLocaleKey key)
 {

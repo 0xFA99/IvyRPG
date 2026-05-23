@@ -137,6 +137,12 @@ typedef enum {
     IVY_KEY_MAX
 } IvyKeybind;
 
+typedef enum {
+    IVY_LOCALE_LANG_EN,
+    IVY_LOCALE_LANG_ID,
+    IVY_LOCALE_LANG_MAX
+} IvyLocaleIndex;
+
 #ifdef __cplusplus
 }
 #endif

@@ -153,6 +153,7 @@ ivy_module(systems
         src/systems/asset_manager.c
         src/systems/locale_manager.c
         src/systems/item_manager.c
+        src/systems/profile_manager.c
 )
 
 ivy_module(scenes

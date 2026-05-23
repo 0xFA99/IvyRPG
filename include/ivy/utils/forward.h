@@ -12,6 +12,7 @@ typedef struct IvyItemManager IvyItemManager;
 typedef struct IvyKeybindInfo IvyKeybindInfo;
 typedef struct IvyLocale IvyLocale;
 typedef struct IvyPlayer IvyPlayer;
+typedef struct IvySaveManager IvySaveManager;
 typedef struct IvyScene IvyScene;
 typedef struct IvySceneManager IvySceneManager;
 typedef struct IvySound IvySound;
