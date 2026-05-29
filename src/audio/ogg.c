@@ -10,10 +10,7 @@
 #include "raylib/raylib.h"
 
 #include <string.h>
-
-#ifndef IVY_DEBUG
 #include <stdlib.h>
-#endif
 
 #define MUSIC_AUDIO_OGG     2
 #define DEFAULT_BITRATE_OGG 16
@@ -56,14 +53,22 @@ void Ivy_Audio_UpdateMusicOGG(const Music *music)
     ma_mutex_lock(&audioData->System.lock);
 
     const u32 subBufferFrames = music->stream.buffer->sizeInFrames / 2;
-    const int frameSize       = music->stream.channels * music->stream.sampleSize / 8;
+    const int frameSize       = (int)(music->stream.channels * music->stream.sampleSize / 8);
     const u32 pcmSize         = subBufferFrames * frameSize;
 
-    // TODO: replace with arena allocation
+    /* TODO: replace with arena allocation to avoid heap alloc on audio thread */
     if (audioData->System.pcmBufferSize < pcmSize) {
         RL_FREE(audioData->System.pcmBuffer);
         audioData->System.pcmBuffer     = RL_CALLOC(1, pcmSize);
         audioData->System.pcmBufferSize = pcmSize;
+    }
+
+    const bool bothProcessed = music->stream.buffer->isSubBufferProcessed[0] &&
+                               music->stream.buffer->isSubBufferProcessed[1];
+
+    if (bothProcessed) {
+        music->stream.buffer->frameCursorPos  = 0;
+        music->stream.buffer->framesProcessed = 0;
     }
 
     for (int i = 0; i < 2; i++) {
@@ -81,29 +86,21 @@ void Ivy_Audio_UpdateMusicOGG(const Music *music)
             break;
         }
 
-        if (!music->stream.buffer->isSubBufferProcessed[i]) continue;
+        const u32 subBufferToUpdate = (u32)i;
+        if (!music->stream.buffer->isSubBufferProcessed[subBufferToUpdate]) continue;
 
-        /* Decode into pcmBuffer, looping vorbis if needed */
         int remaining = (int)framesToStream;
         int readTotal = 0;
         while (remaining > 0) {
             const int read = stb_vorbis_get_samples_short_interleaved(
                 (stb_vorbis *)music->ctxData,
-                music->stream.channels,
+                (int)music->stream.channels,
                 (short *)((char *)audioData->System.pcmBuffer + readTotal * frameSize),
-                remaining * music->stream.channels
+                (int)(remaining * music->stream.channels)
             );
             readTotal += read;
             remaining -= read;
             if (remaining > 0) stb_vorbis_seek_start((stb_vorbis *)music->ctxData);
-        }
-
-        u32 subBufferToUpdate = i;
-        if (music->stream.buffer->isSubBufferProcessed[0] &&
-            music->stream.buffer->isSubBufferProcessed[1])
-        {
-            subBufferToUpdate = 0;
-            music->stream.buffer->frameCursorPos = 0;
         }
 
         u8 *subBuffer = music->stream.buffer->data + (subBufferFrames * frameSize * subBufferToUpdate);

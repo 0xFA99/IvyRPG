@@ -2,6 +2,7 @@
 #include "ivy/core/keybind.h"
 #include "ivy/graphics/gfx.h"
 #include "ivy/scenes/options.h"
+#include "ivy/systems/profile_manager.h"
 
 extern void Options_DrawPopupBackground(const IvyVirtualScreen *vr, float x, float y, float w, float h);
 extern int Options_WaitForKeyPress(void);
@@ -147,9 +148,11 @@ void Options_UpdateKeybindPopup(const IvyGame *restrict game, IvySceneOptionsDat
             if (optionsData->waitingForKey) {
                 const int newKey = Options_WaitForKeyPress();
                 if (newKey != -1) {
-                    Ivy_Keybind_Update(keybinds[optionsData->keybindSelected].key, newKey);
+                    Ivy_Keybind_Update(game->saveManager, keybinds[optionsData->keybindSelected].key, newKey);
                     optionsData->waitingForKey = false;
                     optionsData->keybindState = KEYBIND_STATE_SELECTING;
+
+                    Ivy_SaveManager_Flush(game->saveManager);
                 }
             }
 

@@ -1,6 +1,11 @@
 #include "ivy/core/keybind.h"
 
+#include "ivy/systems/profile_manager.h"
 #include "raylib/raylib.h"
+
+#ifndef _WIN32
+#include <stddef.h>
+#endif
 
 static IvyKeybindInfo keyBindInfo[IVY_KEY_MAX] = {
     // Action - Default Key - Current Key - Padding - Name Key
@@ -17,17 +22,29 @@ const IvyKeybindInfo *Ivy_Keybind_GetKeybindInfo(void)
     return keyBindInfo;
 }
 
-void Ivy_Keybind_Update(const IvyKeybind keybind, const int key)
+void Ivy_Keybind_Load(const IvySaveManager *saveManager)
 {
-    keyBindInfo[keybind].currentKey = key;
+    IVY_ENSURE(saveManager != NULL);
+
+    for (int i = 0; i < IVY_KEY_MAX; i++) {
+        keyBindInfo[i].currentKey = saveManager->save->profile.keybind[i];
+    }
 }
 
-void Ivy_Keybind_Reset(void)
+void Ivy_Keybind_Update(const IvySaveManager *saveManager, const IvyKeybind keybind, const int key)
 {
-    for (int i = 0; i < IVY_KEY_MAX; i++)
-    {
+    keyBindInfo[keybind].currentKey = key;
+
+    saveManager->save->profile.keybind[keybind] = key;
+}
+
+void Ivy_Keybind_Reset(const IvySaveManager *saveManager)
+{
+    for (int i = 0; i < IVY_KEY_MAX; i++) {
         const int defaultKey = keyBindInfo[i].defaultKey;
+
         keyBindInfo[i].currentKey = defaultKey;
+        saveManager->save->profile.keybind[i] = defaultKey;
     }
 }
 

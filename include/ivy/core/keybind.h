@@ -19,8 +19,9 @@ struct IvyKeybindInfo
 IVY_ASSERT_STATIC(sizeof(IvyKeybindInfo) == 24, "[IvyKeybindInfo] Size must be 24 bytes!");
 
 const IvyKeybindInfo *Ivy_Keybind_GetKeybindInfo(void);
-void                  Ivy_Keybind_Update(IvyKeybind keybind, int key);
-void                  Ivy_Keybind_Reset(void);
+void                  Ivy_Keybind_Load(const IvySaveManager *saveManager);
+void                  Ivy_Keybind_Update(const IvySaveManager *saveManager, IvyKeybind keybind, int key);
+void                  Ivy_Keybind_Reset(const IvySaveManager *saveManager);
 
 // TODO: Add keybind loader and save!
 // void            Ivy_Keybind_Load(void);

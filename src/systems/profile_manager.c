@@ -1,7 +1,12 @@
+#define _GNU_SOURCE
+#define _POSIX_C_SOURCE 200809L
+
 #include "ivy/core/types.h"
 #include "ivy/arena/linear.h"
 #include "ivy/systems/profile_manager.h"
 #include "ivy/utils/file_ids.h"
+
+#include "raylib/raylib.h"
 
 #include <string.h>
 #include <stdbool.h>
@@ -88,6 +93,17 @@ fail:
     return false;
 }
 
+bool Ivy_SaveManager_Flush(const IvySaveManager *mgr)
+{
+    IVY_ASSERT(mgr != NULL,              "[SaveManager] Flush: mgr is NULL!");
+    IVY_ASSERT(mgr->mapped_data != NULL, "[SaveManager] Flush: not mapped!");
+
+    if (!FlushViewOfFile(mgr->mapped_data, 0)) return false;
+    if (!FlushFileBuffers(mgr->h_file))       return false;
+
+    return true;
+}
+
 #else
 
 static void Ivy_SaveClose(IvySaveManager *mgr)
@@ -115,9 +131,7 @@ static bool Ivy_SaveMap(IvySaveManager *mgr, const char *path)
     }
 
     mgr->data_size   = SAVE_FILE_SIZE;
-    mgr->mapped_data = mmap(NULL, mgr->data_size,
-                            PROT_READ | PROT_WRITE, MAP_SHARED,
-                            mgr->fd, 0);
+    mgr->mapped_data = mmap(NULL, mgr->data_size, PROT_READ | PROT_WRITE, MAP_SHARED, mgr->fd, 0);
     if (mgr->mapped_data == MAP_FAILED) goto fail;
 
     return true;
@@ -127,9 +141,9 @@ fail:
     return false;
 }
 
-bool Ivy_SaveManager_Flush(IvySaveManager *mgr)
+bool Ivy_SaveManager_Flush(const IvySaveManager *mgr)
 {
-    IVY_ASSERT(mgr != NULL,          "[SaveManager] Flush: mgr is NULL!");
+    IVY_ASSERT(mgr != NULL,              "[SaveManager] Flush: mgr is NULL!");
     IVY_ASSERT(mgr->mapped_data != NULL, "[SaveManager] Flush: not mapped!");
 
     return msync(mgr->mapped_data, mgr->data_size, MS_SYNC) == 0;
@@ -149,7 +163,18 @@ static void Ivy_SaveHeader_Init(void *mapped_data)
 
     IvySaveSystem *sys   = (IvySaveSystem *)((u8 *)mapped_data + sizeof(IvySaveHeader));
     memset(sys, 0, sizeof(IvySaveSystem));
-    sys->profile.localeID = ASSET_LOCALES_EN_BIN;
+
+    sys->profile = (IvyProfile) {
+        .localeID = ASSET_LOCALES_EN_BIN,
+        .keybind = {
+            [IVY_KEY_UP]      = KEY_UP,
+            [IVY_KEY_DOWN]    = KEY_DOWN,
+            [IVY_KEY_LEFT]    = KEY_LEFT,
+            [IVY_KEY_RIGHT]   = KEY_RIGHT,
+            [IVY_KEY_CONFIRM] = KEY_ENTER,
+            [IVY_KEY_CANCEL]  = KEY_ESCAPE,
+        }
+    };
 }
 
 IvySaveManager *Ivy_SaveManager_Init(IvyArenaLinear *restrict arena,

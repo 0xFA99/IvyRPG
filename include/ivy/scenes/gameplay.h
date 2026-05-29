@@ -11,27 +11,38 @@ extern "C" {
 #endif
 
 typedef enum {
-    GAMEPLAY_CLOSE_MENU = 0,
-    GAMEPLAY_OPEN_MENU
+    PAUSE_MENU_CLOSED = 0,
+    PAUSE_MENU_OPENED,
 } IvyGameplayState;
 
 typedef enum {
-    GAMEPLAY_MENU_RESUME = 16,
-    GAMEPLAY_MENU_SAVE = 17,
-    GAMEPLAY_MENU_LOAD = 18,
-    GAMEPLAY_MENU_TITLE = 19,
-    GAMEPLAY_MENU_SIZE = 4
+    GAMEPLAY_MENU_RESUME    = 16,
+    GAMEPLAY_MENU_SAVE      = 17,
+    GAMEPLAY_MENU_LOAD      = 18,
+    GAMEPLAY_MENU_INVENTORY = 20,
+    GAMEPLAY_MENU_TITLE     = 19,
+    GAMEPLAY_MENU_SIZE      = 5
 } IvyGameplayMenuIndex;
+
+typedef struct {
+    Texture2D background;
+    u8 selectedSlot;
+    u8 scrollOffset;
+    u8 visibleRows;
+    u8 totalRows;
+    bool showDescription;
+} IvyInventoryUI;
 
 typedef struct {
     const char *menuStrings[GAMEPLAY_MENU_SIZE];
     u32         menuLengths[GAMEPLAY_MENU_SIZE];
     char        selected;
-
     IvySound    sound;
 } IvyGameplayMenu;
 
-typedef struct {
+struct IvySceneGameplayData {
+    Texture2D background;
+    Texture2D iconsAtlas;
     IvyTilemap  *tilemap;
     IvyPlayer   *player;
     IvyCamera   camera;
@@ -41,6 +52,7 @@ typedef struct {
     IvyGameplayState state;
 
     IvyGameplayMenu menu;
+    IvyInventoryUI inventoryUI;
 
     Music music;
 
@@ -51,7 +63,7 @@ typedef struct {
     // IvyItemManager  *itemManager;
     // IvyInventoryUI   inventoryUI;
     // IvyNPCManager   *npcManager;
-} IvySceneGameplayData;
+};
 
 void Ivy_Scene_GameplayInit             (IvyGame *game);
 void Ivy_Scene_GameplayUpdate           (IvyGame *game);

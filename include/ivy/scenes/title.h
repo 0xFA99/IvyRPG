@@ -19,7 +19,7 @@ typedef enum {
     MENU_COUNT
 } IvyTitleMenu;
 
-typedef struct {
+struct IvySceneTitleData {
     const char *menuStrings[MENU_COUNT];    // 8 * 4 = 32
     u32        menuLengths[MENU_COUNT];     // 4 * 4 = 16
     Texture2D  background;                  // 20
@@ -28,7 +28,7 @@ typedef struct {
     u32        selected;                    // 4
     IvySound   sound;                       // 48
     Music      music;                       // 56
-} IvySceneTitleData;                        // 128
+};                                          // 128
 
 void Ivy_Scene_TitleInit(IvyGame *game);
 void Ivy_Scene_TitleUpdate(IvyGame *game);

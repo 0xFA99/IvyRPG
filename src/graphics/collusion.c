@@ -24,7 +24,7 @@ typedef struct {
 static IvyCollisionVertex *CollisionMap_LoadVertices(IvyAssetManager *restrict manager, IvyArenaLinear *restrict arena, int *outVertexCount)
 {
     usize dataSize;
-    const float *rawData = (const float *)Ivy_Asset_Get(manager, ASSET_MAPS_MAP_1_COLLISION_BIN, &dataSize);
+    const u8 *rawData = (const u8 *)Ivy_Asset_Get(manager, ASSET_MAPS_MAP_1_COLLISION_BIN, &dataSize);
 
     IVY_CHECK(rawData != NULL, "[CollisionMap] Failed to load collusion binary");
 

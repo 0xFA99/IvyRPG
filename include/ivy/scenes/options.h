@@ -3,7 +3,7 @@
 
 #include "ivy/core/types.h"
 #include "ivy/utils/forward.h"
-#include "../audio/wav.h"
+#include "ivy/audio/wav.h"
 
 #include <stdbool.h>
 
@@ -27,7 +27,7 @@ typedef enum {
     KEYBIND_STATE_COUNT
 } IvyKeybindState;
 
-typedef struct {
+struct IvySceneOptionsData {
     const char *menuStrings[OPT_COUNT];     // 8 * 5 = 40
     u32         menuLengths[OPT_COUNT];     // 4 * 5 = 20
     float       cursorY;                    // 4
@@ -43,7 +43,7 @@ typedef struct {
     bool            waitingForKey;          // 1
     char            padding[3];
     IvySound        sound;
-} IvySceneOptionsData;                      // 104
+};                                          // 104
 
 void Ivy_Scene_OptionsInit(IvyGame *game);
 void Ivy_Scene_OptionsUpdate(IvyGame *game);

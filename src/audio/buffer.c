@@ -90,6 +90,18 @@ void Ivy_Audio_StopAudioBuffer(IvyAudioBuffer *buffer)
     buffer->isSubBufferProcessed[1] = true;
 }
 
+void Ivy_Audio_StopAudioBufferSafe(IvyAudioBuffer *buffer)
+{
+    IVY_ENSURE(buffer != NULL);
+
+    IvyAudioData *data = Ivy_Audio_GetAudioData();
+    IVY_ENSURE(data != NULL);
+
+    ma_mutex_lock(&data->System.lock);
+    Ivy_Audio_StopAudioBuffer(buffer);
+    ma_mutex_unlock(&data->System.lock);
+}
+
 void Ivy_Audio_UnloadBuffer(IvyAudioBuffer *buffer)
 {
     IVY_ENSURE(buffer != NULL);

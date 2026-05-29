@@ -6,6 +6,7 @@
 #include "ivy/arena/linear.h"
 #include "ivy/audio/buffer.h"
 #include "ivy/audio/ogg.h"
+#include "ivy/audio/stream.h"
 #include "ivy/systems/scene_manager.h"
 #include "ivy/graphics/tilemap.h"
 #include "ivy/entities/player.h"
@@ -13,13 +14,21 @@
 #include "ivy/graphics/gfx.h"
 #include "ivy/systems/locale_manager.h"
 #include "ivy/utils/file_ids.h"
+#include "ivy/systems/inventory.h"
+#include "ivy/systems/profile_manager.h"
+
+#include <stdio.h>
 
 enum {
-    POPUP_WIDTH = 200,
-    POPUP_HEIGHT = 160
+    POPUP_WIDTH      = 200,
+    POPUP_HEIGHT     = 160,
+    INVENTORY_WIDTH  = 320,
+    INVENTORY_HEIGHT = 280,
+    ITEM_ICON_SIZE   = 18,
+    SLOT_PADDING     = 8
 };
 
-const u16 MENU_GAMEPLAY_PAUSE[] = { 16, 17, 18, 19 };
+const u16 MENU_GAMEPLAY_PAUSE[] = { 16, 17, 18, 20, 19 };
 
 void Ivy_Scene_GameplayInit(IvyGame *game)
 {
@@ -28,146 +37,54 @@ void Ivy_Scene_GameplayInit(IvyGame *game)
     IvySceneGameplayData *gd = Ivy_Arena_LinearAllocZero(&game->arena, sizeof(IvySceneGameplayData));
     IVY_ASSERT(gd != NULL, "[Scene Gameplay] Failed to allocate SceneGameplayData!");
 
-    gd->tilemap = Ivy_Tilemap_LoadMap(game->assets, &game->arena, ASSET_MAPS_MAP_1_METADATA_BIN, ASSET_MAPS_MAP_1_VERTEX_BIN);
+    gd->tilemap      = Ivy_Tilemap_LoadMap(game->assets, &game->arena, ASSET_MAPS_MAP_1_METADATA_BIN, ASSET_MAPS_MAP_1_VERTEX_BIN);
     gd->collusionMap = Ivy_Collusion_Load(&game->arena, game->assets);
-    gd->player = Ivy_Player_Init(&game->arena, game->assets, (Vector2){ 10.0f, 16.0f });
-    gd->camera = Ivy_Camera_Init();
+    gd->player       = Ivy_Player_Init(&game->arena, game->assets, (Vector2){ 10.0f, 16.0f });
+    gd->camera       = Ivy_Camera_Init();
+    gd->itemManager  = Ivy_ItemManager_Init(&game->arena, game->assets);
+    gd->state        = PAUSE_MENU_CLOSED;
 
-    gd->itemManager = Ivy_ItemManager_Init(&game->arena, game->assets);
+    // Init inventory UI
+    gd->inventoryUI.selectedSlot    = 0;
+    gd->inventoryUI.scrollOffset    = 0;
+    gd->inventoryUI.visibleRows     = 4;
+    gd->inventoryUI.showDescription = true;
 
-    gd->state = GAMEPLAY_CLOSE_MENU;
+    // IvyInventory *inv = Ivy_Player_GetInventory(gd->player);
 
-    Ivy_Player_EquipItem(gd->player, game->assets, &gd->itemManager);
+    const IvyItemAttribute *shirtAttr = Ivy_ItemManager_GetAttribute(&gd->itemManager, 1);
+    const IvyItemAttribute *pantsAttr = Ivy_ItemManager_GetAttribute(&gd->itemManager, 2);
+    // const IvyItemAttribute *pantyAttr = Ivy_ItemManager_GetAttribute(&gd->itemManager, 3);
 
-    // locales
-    for (u32 i = 0; i < 4; i++) {
-        gd->menu.menuStrings[i] = IVY_TR(game->locale, (IvyLocaleKey)MENU_GAMEPLAY_PAUSE[i]);
+    // i32 shirtBagIdx = -1, pantsBagIdx = -1, pantyBagIdx = -1;
+    // i32 shirtBagIdx = -1;
+    // if (shirtAttr) shirtBagIdx = Ivy_Inventory_AddItem(&gd->player->inventory.bag, 1, shirtAttr->type, 1);
+    Ivy_Inventory_AddItem(&gd->player->inventory.bag, shirtAttr->id, shirtAttr->type, 3);
+    Ivy_Inventory_AddItem(&gd->player->inventory.bag, pantsAttr->id, pantsAttr->type, 2);
+    // if (pantsAttr) pantsBagIdx = Ivy_Inventory_AddItem(&gd->player->inventory.bag, 2, pantsAttr->type, 1);
+    // if (pantyAttr) pantyBagIdx = Ivy_Inventory_AddItem(&gd->player->inventory.bag, 3, pantyAttr->type, 1);
+
+    // if (shirtBagIdx >= 0) {
+        Ivy_Player_EquipItem(gd->player, game->assets, &gd->itemManager, 0);
+    // }
+    Ivy_Player_EquipItem(gd->player, game->assets, &gd->itemManager, 1);
+
+    for (u32 i = 0; i < GAMEPLAY_MENU_SIZE; i++) {
+        gd->menu.menuStrings[i] = IVY_TR    (game->locale, (IvyLocaleKey)MENU_GAMEPLAY_PAUSE[i]);
         gd->menu.menuLengths[i] = IVY_TR_LEN(game->locale, (IvyLocaleKey)MENU_GAMEPLAY_PAUSE[i]);
     }
 
     gd->menu.selected = 0;
-    gd->menu.sound = Ivy_Audio_LoadSoundWav(&game->arena, game->assets, ASSET_AUDIO_CURSOR_WAV);
-
-    gd->music = Ivy_Audio_LoadMusicOGG(&game->arena, game->assets, ASSET_MUSIC_POINT_AND_CLICK_OGG, 192560);
+    gd->menu.sound    = Ivy_Audio_LoadSoundWav(&game->arena, game->assets, ASSET_AUDIO_CURSOR_WAV);
+    gd->music         = Ivy_Audio_LoadMusicOGG(&game->arena, game->assets, ASSET_MUSIC_POINT_AND_CLICK_OGG, 192560);
 
     Ivy_Audio_PlayAudioBuffer(gd->music.stream.buffer);
 
+    gd->background = Ivy_Gfx_LoadTextureDDS(game->assets, ASSET_TEXTURES_BACKGROUND_DDS);
+    gd->inventoryUI.background = Ivy_Gfx_LoadTextureDDS(game->assets, ASSET_TEXTURES_MENU_EQUIPMENT_TEMPLATE_DDS);
+    gd->iconsAtlas = Ivy_Gfx_LoadTextureDDS(game->assets, ASSET_TEXTURES_ICONS_DDS);
+
     game->scenes->actionScene->data = gd;
-}
-
-void Ivy_Scene_GameplayUpdate(IvyGame *g)
-{
-    IvySceneGameplayData *gd = g->scenes->actionScene->data;
-
-    // UpdateMusicStream(gd->music);
-    Ivy_Audio_UpdateMusicOGG(&gd->music);
-
-    if (IsKeyPressed(KEY_I) && gd->state != GAMEPLAY_OPEN_MENU) {
-        gd->state = GAMEPLAY_OPEN_MENU;
-        gd->menu.selected = 0;
-    }
-    else if (IsKeyPressed(KEY_ESCAPE) && gd->state == GAMEPLAY_OPEN_MENU) {
-        gd->state = GAMEPLAY_CLOSE_MENU;
-    }
-
-    if (gd->state == GAMEPLAY_OPEN_MENU) {
-        const int direction = IsKeyPressed(g->keybind[IVY_KEY_DOWN].currentKey)
-                            - IsKeyPressed(g->keybind[IVY_KEY_UP].currentKey);
-
-        if (IsKeyPressed(g->keybind[IVY_KEY_CONFIRM].currentKey)) {
-            switch (gd->menu.selected)
-            {
-                case 0: // RESUME
-                    gd->state = GAMEPLAY_CLOSE_MENU;
-                    break;
-
-                // TODO: Save & Load
-                // case 1: break;
-                // case 2: break;
-
-                case 3: // BACK TO TITLE
-                    Ivy_SceneManager_Transition(g, SCENE_TITLE);
-                    break;
-
-                default: break;
-            }
-        }
-
-        if (direction) {
-            gd->menu.selected = (gd->menu.selected + direction + GAMEPLAY_MENU_SIZE) % GAMEPLAY_MENU_SIZE;
-            Ivy_Audio_PlayAudioBuffer(gd->menu.sound.data.stream.buffer);
-        }
-
-        return;
-    }
-
-    const float frameTime = GetFrameTime();
-    Ivy_Player_Update(gd->player, frameTime, gd->collusionMap);
-    Ivy_Camera_Update(&gd->camera, Ivy_Player_GetPosition(gd->player));
-}
-
-void Ivy_Scene_GameplayDrawWorld(IvyGame *g)
-{
-    IvySceneGameplayData *gd = g->scenes->actionScene->data;
-
-    BeginMode2D(gd->camera.view);
-#ifdef IVY_DEBUG
-    Ivy_Tilemap_Render(gd->tilemap);
-    Ivy_Collusion_Draw(gd->collusionMap);
-#else
-    Ivy_Collusion_Draw(gd->collusionMap);
-    Ivy_Tilemap_Render(gd->tilemap);
-#endif
-    Ivy_Player_Render(gd->player);
-    EndMode2D();
-}
-
-void Ivy_Scene_GameplayRebuildTextures(IvyGame *g)
-{
-    IvySceneGameplayData *gd = g->scenes->actionScene->data;
-    Ivy_Player_BakeAtlas(gd->player);
-}
-
-void Ivy_Scene_GameplayDrawUI(IvyGame *g)
-{
-    const IvySceneGameplayData *gd = g->scenes->actionScene->data;
-    const IvyVirtualScreen *viewport = g->viewport;
-
-    if (gd->state != GAMEPLAY_CLOSE_MENU)
-    {
-        DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), (Color){ 0, 0, 0, 180 });
-
-        const float x = (VIRTUAL_WIDTH - POPUP_WIDTH) * 0.5f;
-        const float y = (VIRTUAL_HEIGHT - POPUP_HEIGHT) * 0.5f;
-        const Vector2 popupPos = Ivy_Gfx_GetScreenPos(viewport, (Vector2){ x, y });
-
-        DrawRectangleRec(
-            (Rectangle) {
-                .x      = popupPos.x,
-                .y      = popupPos.y,
-                .width  = POPUP_WIDTH * viewport->scale,
-                .height = POPUP_HEIGHT * viewport->scale
-            },
-            (Color){ 30, 30, 45, 200 }
-        );
-
-        const float menuY = VIRTUAL_HEIGHT * 0.5f;
-
-        for (u32 i = 0; i < 4; i++)
-        {
-            const Vector2 textPos = Ivy_Gfx_GetScreenPos(viewport, (Vector2){ x + 16, menuY + ((float)i * 16) });
-
-            Ivy_Gfx_DrawLocaleText(
-                g->fonts[IVY_FONT_PRIMARY],
-                gd->menu.menuStrings[i],
-                gd->menu.menuLengths[i],
-                textPos,
-                14 * viewport->scale,
-                1,
-                i == (u32)gd->menu.selected ? WHITE : GRAY
-            );
-        }
-    }
 }
 
 void Ivy_Scene_GameplayUnload(IvySceneManager *sm)
@@ -179,4 +96,9 @@ void Ivy_Scene_GameplayUnload(IvySceneManager *sm)
     Ivy_Tilemap_Unload(gd->tilemap);
     Ivy_Collusion_Unload(gd->collusionMap);
     Ivy_Player_Unload(gd->player);
+
+    Ivy_Audio_UnloadSound(&gd->menu.sound);
+    Ivy_Audio_UnloadStream(&gd->music);
+
+    sm->actionScene->data = NULL;
 }

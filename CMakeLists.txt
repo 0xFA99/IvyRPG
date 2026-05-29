@@ -154,11 +154,14 @@ ivy_module(systems
         src/systems/locale_manager.c
         src/systems/item_manager.c
         src/systems/profile_manager.c
+        src/systems/inventory.c
 )
 
 ivy_module(scenes
         src/scenes/title.c
         src/scenes/gameplay.c
+        src/scenes/gameplay/update.c
+        src/scenes/gameplay/draw.c
         src/scenes/options/options.c
         src/scenes/options/options_data.c
         src/scenes/options/options_draw.c
@@ -176,6 +179,7 @@ add_executable(${PROJECT_NAME} src/main.c)
 target_include_directories(${PROJECT_NAME} PRIVATE ${INCLUDE_DIR})
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
+        -Wl,--start-group
         ivy_arena
         ivy_audio
         ivy_core
@@ -183,6 +187,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
         ivy_systems
         ivy_scenes
         ivy_entities
+        -Wl,--end-group
         raylib
 )
 

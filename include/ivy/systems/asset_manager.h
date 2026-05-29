@@ -57,11 +57,9 @@ IVY_INLINE const void* Ivy_Asset_Get(IvyAssetManager *restrict mgr, const u32 id
         return NULL;
     }
 
-    // direct-mapped lookup.
     const u32 index = id & mgr->table_mask;
     const IvyAssetEntry *entry = &mgr->table[index];
 
-    // assumes perfect hashing at pack time.
     if (IVY_LIKELY(entry->id == id)) {
         if (out_size) *out_size = entry->size;
         return (const u8*)mgr->mapped_data + entry->offset;

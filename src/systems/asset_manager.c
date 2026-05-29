@@ -49,7 +49,6 @@ static void Ivy_ClosePlatformHandles(IvyAssetManager *mgr)
 
 static bool Ivy_MapDataFile(IvyAssetManager *mgr, const char *data_path)
 {
-    // FILE_FLAG_SEQUENTIAL_SCAN: hint to cache manager for bulk read.
     mgr->h_file = CreateFileA(data_path, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING,
         FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN,
         NULL
@@ -70,7 +69,6 @@ static bool Ivy_MapDataFile(IvyAssetManager *mgr, const char *data_path)
         return false;
     }
 
-    // PAGE_READONLY + FILE_MAP_READ: read-only mapping.
     mgr->h_map = CreateFileMappingA(mgr->h_file, NULL, PAGE_READONLY, 0, 0, NULL);
 
     if (!mgr->h_map) {

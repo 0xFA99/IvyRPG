@@ -1,26 +1,24 @@
+#include "ivy/core/types.h"
 #include "ivy/core/game.h"
-
 #include "ivy/core/keybind.h"
 #include "ivy/systems/asset_manager.h"
 #include "ivy/systems/scene_manager.h"
 #include "ivy/systems/locale_manager.h"
-#include "ivy/graphics/gfx.h"
 #include "ivy/systems/profile_manager.h"
+#include "ivy/graphics/gfx.h"
 #include "ivy/utils/file_ids.h"
 
 #include "raylib/rlgl.h"
 
-#define IVY_ASSET_HEADER            "assets/header.bin"
-#define IVY_ASSET_DATA              "assets/data.bin"
-#define IVY_SAVE_PATH               "save.bin"
-#define IVY_FONT_SIZE               64
+#define IVY_ASSET_HEADER    "assets/header.bin"
+#define IVY_ASSET_DATA      "assets/data.bin"
+#define IVY_SAVE_PATH       "save.bin"
 
 IvyGame Ivy_Game_Init(const Vector2 size)
 {
     IvyGame game = {0};
 
     // Arena
-    // Ivy_Arena_LinearInit(&game.arenas[IVY_ARENA_LOCALE], 32);
     Ivy_Arena_LinearInit(&game.arena, 924928);
 
     // Save Manager
@@ -31,7 +29,6 @@ IvyGame Ivy_Game_Init(const Vector2 size)
 
     // Load locale
     const u32 localeID = game.saveManager->save->profile.localeID;
-    // game.locale = Ivy_Locale_Load(game.assets, localeID, &game.arenas[IVY_ARENA_LOCALE]);
     game.locale = Ivy_Locale_Load(game.assets, localeID, &game.arena);
 
     // Virtual Resolution
@@ -52,6 +49,7 @@ IvyGame Ivy_Game_Init(const Vector2 size)
 
     // Keybind
     game.keybind = Ivy_Keybind_GetKeybindInfo();
+    Ivy_Keybind_Load(game.saveManager);
 
     // Scene Manager
     game.scenes = Ivy_SceneManager_Init(&game, game.assets);
@@ -62,6 +60,12 @@ IvyGame Ivy_Game_Init(const Vector2 size)
 void Ivy_Game_Update(IvyGame *game)
 {
     Ivy_SceneManager_RebuildIfNeeded(game);
+
+    // Urgent Reset Keybind
+    if (IsKeyPressed(KEY_F5)) {
+        Ivy_Keybind_Reset(game->saveManager);
+        Ivy_SaveManager_Flush(game->saveManager);
+    }
 
     if (IVY_LIKELY(game->scenes->actionScene->table->Update)) {
         game->scenes->actionScene->table->Update(game);
@@ -94,8 +98,6 @@ void Ivy_Game_Destroy(IvyGame *game)
 
     const IvyScene *s = game->scenes->actionScene;
     if (IVY_LIKELY(s && s->table->Unload)) s->table->Unload(game->scenes);
-
-    Ivy_SaveManager_Flush(game->saveManager);
 
     Ivy_Gfx_UnloadFont(&game->fonts[IVY_FONT_PRIMARY]);
     Ivy_Gfx_UnloadFont(&game->fonts[IVY_FONT_SECONDARY]);
