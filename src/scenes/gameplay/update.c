@@ -6,6 +6,58 @@
 #include "ivy/systems/scene_manager.h"
 #include "ivy/entities/player.h"
 
+static void GameplayInventory(IvyGame *game)
+{
+    IvySceneGameplayData *gameplayData = game->scenes->actionScene->data;
+    IvyInventoryUI *ui = &gameplayData->inventoryUI;
+
+    const IvyInventory *inventory = Ivy_Player_GetInventory(gameplayData->player);
+    const IvyInventoryBag *bag = &inventory->bag;
+    const u8 targetCategory = IVY_ITEM_TYPE_EQUIPMENT;
+    const u8 equipmentCount = bag->categoryCount[targetCategory];
+
+    if (equipmentCount > 0) {
+        if (gameplayData->inventoryUI.selectedSlot >= equipmentCount) {
+            gameplayData->inventoryUI.selectedSlot = 0;
+        }
+
+        if (IsKeyPressed(KEY_RIGHT))
+        {
+            if (gameplayData->inventoryUI.selectedSlot + 1 < equipmentCount) {
+                gameplayData->inventoryUI.selectedSlot += 1;
+                Ivy_Audio_PlayAudioBuffer(gameplayData->inventoryUI.sound[0].data.stream.buffer);
+            }
+        }
+        else if (IsKeyPressed(KEY_LEFT))
+        {
+            if (gameplayData->inventoryUI.selectedSlot > 0) {
+                gameplayData->inventoryUI.selectedSlot -= 1;
+                Ivy_Audio_PlayAudioBuffer(gameplayData->inventoryUI.sound[0].data.stream.buffer);
+            }
+        }
+        else if (IsKeyPressed(KEY_DOWN))
+        {
+            if (gameplayData->inventoryUI.selectedSlot + 2 < equipmentCount) {
+                gameplayData->inventoryUI.selectedSlot += 2;
+                Ivy_Audio_PlayAudioBuffer(gameplayData->inventoryUI.sound[0].data.stream.buffer);
+            }
+        }
+        else if (IsKeyPressed(KEY_UP))
+        {
+            if (gameplayData->inventoryUI.selectedSlot >= 2) {
+                gameplayData->inventoryUI.selectedSlot -= 2;
+                Ivy_Audio_PlayAudioBuffer(gameplayData->inventoryUI.sound[0].data.stream.buffer);
+            }
+        }
+    }
+
+    if (IsKeyPressed(game->keybind[IVY_KEY_CANCEL].currentKey)) {
+        gameplayData->state = PAUSE_MENU_OPENED;
+        ui->selectedSlot = 255;
+        Ivy_Audio_PlayAudioBuffer(gameplayData->inventoryUI.sound[1].data.stream.buffer);
+    }
+}
+
 static void GameplayUpdateStatePause(IvyGame *game)
 {
     IvySceneGameplayData *gameplayData = game->scenes->actionScene->data;
@@ -24,6 +76,11 @@ static void GameplayUpdateStatePause(IvyGame *game)
                 gameplayData->state = PAUSE_MENU_CLOSED;
                 break;
 
+            case 3:
+                gameplayData->state = PAUSE_MENU_INVENTORY;
+                gameplayData->inventoryUI.selectedSlot = 0;
+                break;
+
             case 4:
                 Ivy_SceneManager_Transition(game, SCENE_TITLE);
                 break;
@@ -38,6 +95,11 @@ void Ivy_Scene_GameplayUpdate(IvyGame *game)
     IvySceneGameplayData *gameplayData = game->scenes->actionScene->data;
 
     Ivy_Audio_UpdateMusicOGG(&gameplayData->music);
+
+    if (gameplayData->state == PAUSE_MENU_INVENTORY) {
+        GameplayInventory(game);
+        return;
+    }
 
     const int pauseKey = game->keybind[IVY_KEY_CANCEL].currentKey;
     if (IsKeyPressed(pauseKey))

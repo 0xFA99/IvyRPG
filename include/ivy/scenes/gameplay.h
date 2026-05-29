@@ -13,6 +13,7 @@ extern "C" {
 typedef enum {
     PAUSE_MENU_CLOSED = 0,
     PAUSE_MENU_OPENED,
+    PAUSE_MENU_INVENTORY
 } IvyGameplayState;
 
 typedef enum {
@@ -25,6 +26,7 @@ typedef enum {
 } IvyGameplayMenuIndex;
 
 typedef struct {
+    IvySound sound[2];
     Texture2D background;
     u8 selectedSlot;
     u8 scrollOffset;

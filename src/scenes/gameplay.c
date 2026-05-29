@@ -45,7 +45,9 @@ void Ivy_Scene_GameplayInit(IvyGame *game)
     gd->state        = PAUSE_MENU_CLOSED;
 
     // Init inventory UI
-    gd->inventoryUI.selectedSlot    = 0;
+    gd->inventoryUI.sound[0] = Ivy_Audio_LoadSoundWav(&game->arena, game->assets, ASSET_AUDIO_EQUIP2_WAV);
+    gd->inventoryUI.sound[1] = Ivy_Audio_LoadSoundWav(&game->arena, game->assets, ASSET_AUDIO_EQUIP3_WAV);
+    gd->inventoryUI.selectedSlot    = 255;
     gd->inventoryUI.scrollOffset    = 0;
     gd->inventoryUI.visibleRows     = 4;
     gd->inventoryUI.showDescription = true;

@@ -108,7 +108,7 @@ static void DrawMenuItems(const IvyGame *restrict game, const IvySceneGameplayDa
 static void DrawInventoryLayout(const IvySceneGameplayData *restrict gameplayData, const IvyVirtualScreen *restrict viewport)
 {
     const float backgroundWidth = gameplayData->inventoryUI.background.width;
-    const float backgroundHeight = gameplayData->inventoryUI.background.height - 28;
+    const float backgroundHeight = gameplayData->inventoryUI.background.height - 34;
 
     const float bgVirtualX = (VIRTUAL_WIDTH - backgroundWidth) * 0.5f;
     const float bgVirtualY = (VIRTUAL_HEIGHT - backgroundHeight) * 0.5f;
@@ -213,22 +213,14 @@ static void DrawItemListTemplate(const IvyGame *restrict game, const IvyVirtualS
     const float itemSlotWidth = 144.0f;
     const float itemSlotHeight = 28.0f;
 
-    static int selectedIndex = 0;
-
-    const Vector2 frameScreenPos = Ivy_Gfx_GetScreenPos(viewport, (Vector2){ 305.0f, 24.0f });
-    const Rectangle frameRect = {
-        .x      = frameScreenPos.x,
-        .y      = frameScreenPos.y,
-        .width  = 307.0f * viewport->scale,
-        .height = 181.0f * viewport->scale
-    };
-    DrawRectangleLinesEx(frameRect, 2.0f, (Color){ 100, 100, 100, 255 });
+    // TEST
+    const int selectedIndex = gd->inventoryUI.selectedSlot;
 
     const u8 targetCategory = IVY_ITEM_TYPE_EQUIPMENT;
     const u8 equipmentCount = bag->categoryCount[targetCategory];
     const u8 equipmentOffset = bag->categoryOffset[targetCategory];
 
-    for (int i = 0; i < 12; i++)
+    for (int i = 0; i < equipmentCount; i++)
     {
         const Vector2 screenPos = Ivy_Gfx_GetScreenPos(viewport, itemPositions[i]);
 
@@ -251,6 +243,10 @@ static void DrawItemListTemplate(const IvyGame *restrict game, const IvyVirtualS
             const u16 itemID = bag->slot[internalBagIndex].itemID;
 
             const char *itemName = Ivy_ItemManager_GetName(&gd->itemManager, itemID);
+
+            char itemCountStr[16];
+            snprintf(itemCountStr, sizeof(itemCountStr), "Stack: %d\n", bag->slot[internalBagIndex].quantity);
+
             const IvyItemVisual *visual = Ivy_ItemManager_GetVisual(&gd->itemManager, itemID);
 
             // draw icon
@@ -269,18 +265,31 @@ static void DrawItemListTemplate(const IvyGame *restrict game, const IvyVirtualS
 
             // item name
             const float fontSize = 12.0f * viewport->scale;
+            const float texPaddingX = 32.0f * viewport->scale;
             const Vector2 textSize = MeasureTextEx(game->fonts[IVY_FONT_SECONDARY], itemName, fontSize, 1.0f);
 
             DrawTextEx(
                 game->fonts[IVY_FONT_SECONDARY],
                 itemName,
                 (Vector2){
-                    screenPos.x + 72.0f,
-                    screenPos.y + (slotRect.height - textSize.y) * 0.1f
+                    screenPos.x + texPaddingX,
+                    screenPos.y + (slotRect.height - textSize.y) * 0.15f
                 },
                 fontSize,
                 1.0f,
-                (Color){ 220, 220, 220, 255 }
+                WHITE
+            );
+
+            DrawTextEx(
+                game->fonts[IVY_FONT_SECONDARY],
+                itemCountStr,
+                (Vector2){
+                    screenPos.x + texPaddingX,
+                    screenPos.y + (slotRect.height - textSize.y) * 0.75f
+                },
+                fontSize,
+                1.0f,
+                GRAY
             );
         }
     }
@@ -289,19 +298,23 @@ static void DrawItemListTemplate(const IvyGame *restrict game, const IvyVirtualS
 void Ivy_Scene_GameplayDrawUI(IvyGame *game)
 {
     const IvySceneGameplayData *gameplayData = game->scenes->actionScene->data;
-    if (gameplayData->state != PAUSE_MENU_OPENED) return;
+    if (gameplayData->state == PAUSE_MENU_CLOSED) return;
 
     const IvyVirtualScreen *viewport = game->viewport;
 
-    DrawMenuBackground(gameplayData, viewport);
-
-    // TODO: TEST
+    // TODO: Inventory Test
     if (gameplayData->menu.selected == 3)
     {
+        DrawMenuBackground(gameplayData, viewport);
+        DrawMenuItems(game, gameplayData, viewport);
         DrawInventoryLayout(gameplayData, viewport);
         DrawSlotTemplate(game, viewport);
         DrawItemListTemplate(game, viewport);
+        return;
     }
 
-    DrawMenuItems(game, gameplayData, viewport);
+    if (gameplayData->state == PAUSE_MENU_OPENED) {
+        DrawMenuBackground(gameplayData, viewport);
+        DrawMenuItems(game, gameplayData, viewport);
+    }
 }
