@@ -6,6 +6,9 @@
 #include "ivy/graphics/camera.h"
 #include "ivy/audio/wav.h"
 
+#define INVENTORY_SLOT_NONE 255
+#define EQUIP_DEFAULT_SLOT  3
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -25,11 +28,18 @@ typedef enum {
     GAMEPLAY_MENU_SIZE      = 5
 } IvyGameplayMenuIndex;
 
+typedef enum {
+    INVENTORY_FOCUS_ITEM_LIST = 0,
+    INVENTORY_FOCUS_EQUIP_SLOTS
+} IvyInventoryFocus;
+
 typedef struct {
-    IvySound sound[2];
     Texture2D background;
+    IvySound sound[2];
     u8 selectedSlot;
     u8 scrollOffset;
+    u8 selectedEquip;
+    u8 focus;
     u8 visibleRows;
     u8 totalRows;
     bool showDescription;
@@ -50,21 +60,10 @@ struct IvySceneGameplayData {
     IvyCamera   camera;
     IvyCollusionMap *collusionMap;
     IvyItemManager itemManager;
-
     IvyGameplayState state;
-
     IvyGameplayMenu menu;
     IvyInventoryUI inventoryUI;
-
     Music music;
-
-    // IvyGameCamera    gameCamera;
-    // Camera2D camera;
-    // IvyCollision    *collision;
-    // IvyPlayer       *player;
-    // IvyItemManager  *itemManager;
-    // IvyInventoryUI   inventoryUI;
-    // IvyNPCManager   *npcManager;
 };
 
 void Ivy_Scene_GameplayInit             (IvyGame *game);

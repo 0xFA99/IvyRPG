@@ -6,55 +6,99 @@
 #include "ivy/systems/scene_manager.h"
 #include "ivy/entities/player.h"
 
-static void GameplayInventory(IvyGame *game)
+static const i8 EQUIP_NAVIGATION[13][4] = {
+    //      L   R    U   D
+     { 1,  3,  -1,  2 },
+     {-1,  2,   0,  4 },
+     { 1,  3,   0,  5 },
+     { 2, -2,   0,  6 },
+     {-1,  5,   1,  7 },
+     { 4,  6,   2,  8 },
+     { 5, -2,   3,  9 },
+     {-1,  8,   4, 10 },
+     { 7,  9,   5, 11 },
+     { 8, -2,   6, 12 },
+     {-1, 11,   7, -1 },
+     {10, 12,   8, -1 },
+     {11, -2,   9, -1 },
+};
+
+IVY_INLINE u8 EquipSlotToItemRow(const u8 equipSlot)
+{
+    return (equipSlot / 3) - 1;
+}
+
+static void GameplayInventory(const IvyGame *game)
 {
     IvySceneGameplayData *gameplayData = game->scenes->actionScene->data;
     IvyInventoryUI *ui = &gameplayData->inventoryUI;
 
     const IvyInventory *inventory = Ivy_Player_GetInventory(gameplayData->player);
     const IvyInventoryBag *bag = &inventory->bag;
-    const u8 targetCategory = IVY_ITEM_TYPE_EQUIPMENT;
-    const u8 equipmentCount = bag->categoryCount[targetCategory];
+    const u8 equipmentCount = bag->categoryCount[IVY_ITEM_TYPE_EQUIPMENT];
 
-    if (equipmentCount > 0) {
-        if (gameplayData->inventoryUI.selectedSlot >= equipmentCount) {
-            gameplayData->inventoryUI.selectedSlot = 0;
-        }
-
-        if (IsKeyPressed(KEY_RIGHT))
-        {
-            if (gameplayData->inventoryUI.selectedSlot + 1 < equipmentCount) {
-                gameplayData->inventoryUI.selectedSlot += 1;
-                Ivy_Audio_PlayAudioBuffer(gameplayData->inventoryUI.sound[0].data.stream.buffer);
-            }
-        }
-        else if (IsKeyPressed(KEY_LEFT))
-        {
-            if (gameplayData->inventoryUI.selectedSlot > 0) {
-                gameplayData->inventoryUI.selectedSlot -= 1;
-                Ivy_Audio_PlayAudioBuffer(gameplayData->inventoryUI.sound[0].data.stream.buffer);
-            }
-        }
-        else if (IsKeyPressed(KEY_DOWN))
-        {
-            if (gameplayData->inventoryUI.selectedSlot + 2 < equipmentCount) {
-                gameplayData->inventoryUI.selectedSlot += 2;
-                Ivy_Audio_PlayAudioBuffer(gameplayData->inventoryUI.sound[0].data.stream.buffer);
-            }
-        }
-        else if (IsKeyPressed(KEY_UP))
-        {
-            if (gameplayData->inventoryUI.selectedSlot >= 2) {
-                gameplayData->inventoryUI.selectedSlot -= 2;
-                Ivy_Audio_PlayAudioBuffer(gameplayData->inventoryUI.sound[0].data.stream.buffer);
-            }
-        }
-    }
-
+    // close inventory
     if (IsKeyPressed(game->keybind[IVY_KEY_CANCEL].currentKey)) {
         gameplayData->state = PAUSE_MENU_OPENED;
-        ui->selectedSlot = 255;
-        Ivy_Audio_PlayAudioBuffer(gameplayData->inventoryUI.sound[1].data.stream.buffer);
+        ui->selectedSlot = INVENTORY_SLOT_NONE;
+
+        Ivy_Audio_PlayAudioBuffer(ui->sound[1].data.stream.buffer);
+
+        return;
+    }
+
+    // item list
+    if (ui->focus == INVENTORY_FOCUS_ITEM_LIST && equipmentCount > 0)
+    {
+        if (ui->selectedSlot >= equipmentCount)
+            ui->selectedSlot = 0;
+
+        if (IsKeyPressed(KEY_RIGHT)) {
+            if ((ui->selectedSlot % 2 == 0) && (ui->selectedSlot + 1 < equipmentCount))
+                ui->selectedSlot += 1;
+        }
+        // move to slot layout
+        else if (IsKeyPressed(KEY_LEFT)) {
+            if (ui->selectedSlot % 2 == 0) {
+                ui->focus = INVENTORY_FOCUS_EQUIP_SLOTS;
+                ui->selectedEquip = EQUIP_DEFAULT_SLOT;
+            } else {
+                ui->selectedSlot -= 1;
+            }
+        }
+        else if (IsKeyPressed(KEY_DOWN)) {
+            if (ui->selectedSlot + 2 < equipmentCount)
+                ui->selectedSlot += 2;
+        }
+        else if (IsKeyPressed(KEY_UP)) {
+            if (ui->selectedSlot >= 2)
+                ui->selectedSlot -= 2;
+        }
+        return;
+    }
+
+    // slot layout
+    if (ui->focus == INVENTORY_FOCUS_EQUIP_SLOTS)
+    {
+        const i8 *nav = EQUIP_NAVIGATION[ui->selectedEquip];
+        i8 next = -1;
+
+        if      (IsKeyPressed(KEY_LEFT))  next = nav[0];
+        else if (IsKeyPressed(KEY_RIGHT)) next = nav[1];
+        else if (IsKeyPressed(KEY_UP))    next = nav[2];
+        else if (IsKeyPressed(KEY_DOWN))  next = nav[3];
+
+        // move to item list layout
+        if (next == -2) {
+            u8 targetSlot = EquipSlotToItemRow(ui->selectedEquip) * 2;
+            if (targetSlot >= equipmentCount) targetSlot = 0;
+
+            ui->selectedSlot = targetSlot;
+            ui->focus        = INVENTORY_FOCUS_ITEM_LIST;
+        }
+        else if (next >= 0) {
+            ui->selectedEquip = (u8)next;
+        }
     }
 }
 
@@ -70,23 +114,29 @@ static void GameplayUpdateStatePause(IvyGame *game)
         Ivy_Audio_PlayAudioBuffer(gameplayData->menu.sound.data.stream.buffer);
     }
 
-    if (IsKeyPressed(game->keybind[IVY_KEY_CONFIRM].currentKey)) {
-        switch (gameplayData->menu.selected) {
-            case 0:
-                gameplayData->state = PAUSE_MENU_CLOSED;
-                break;
+    if (gameplayData->menu.selected != GAMEPLAY_MENU_SIZE - 1 && IsKeyPressed(game->keybind[IVY_KEY_CANCEL].currentKey)) {
+        gameplayData->menu.selected = GAMEPLAY_MENU_SIZE - 1;
+        Ivy_Audio_PlayAudioBuffer(gameplayData->menu.sound.data.stream.buffer);
+    }
 
-            case 3:
-                gameplayData->state = PAUSE_MENU_INVENTORY;
-                gameplayData->inventoryUI.selectedSlot = 0;
-                break;
+    if (!IsKeyPressed(game->keybind[IVY_KEY_CONFIRM].currentKey)) return;
 
-            case 4:
-                Ivy_SceneManager_Transition(game, SCENE_TITLE);
-                break;
+    switch (gameplayData->menu.selected) {
+        case 0:
+            gameplayData->state = PAUSE_MENU_CLOSED;
+            break;
 
-            default: break;
-        }
+        case 3:
+            gameplayData->state = PAUSE_MENU_INVENTORY;
+            gameplayData->inventoryUI.selectedSlot = 0;
+            gameplayData->inventoryUI.focus = INVENTORY_FOCUS_ITEM_LIST;
+            break;
+
+        case 4:
+            Ivy_SceneManager_Transition(game, SCENE_TITLE);
+            break;
+
+        default: break;
     }
 }
 
@@ -102,14 +152,14 @@ void Ivy_Scene_GameplayUpdate(IvyGame *game)
     }
 
     const int pauseKey = game->keybind[IVY_KEY_CANCEL].currentKey;
-    if (IsKeyPressed(pauseKey))
-    {
+    if (IsKeyPressed(pauseKey)) {
         if (gameplayData->state == PAUSE_MENU_CLOSED) {
             gameplayData->state = PAUSE_MENU_OPENED;
             gameplayData->menu.selected = 0;
         }
-        else if (gameplayData->state == PAUSE_MENU_CLOSED) {
+        else if (gameplayData->state == PAUSE_MENU_OPENED) {
             gameplayData->state = PAUSE_MENU_CLOSED;
+            gameplayData->inventoryUI.selectedSlot = INVENTORY_SLOT_NONE;
         }
     }
 
