@@ -17,10 +17,10 @@ enum {
     ITEM_SLOT_WIDTH    = 144,
     ITEM_SLOT_HEIGHT   = 28,
     ITEM_ICON_SIZE     = 24,
-    ITEM_ICON_OFFSET_X = 8,
+    ITEM_ICON_OFFSET_X = 4,
     ITEM_ICON_OFFSET_Y = 2,
     ITEM_TEXT_OFFSET_X = 32,
-    ITEM_FONT_SIZE     = 12
+    ITEM_FONT_SIZE     = 11
 };
 
 static const Rectangle EQUIP_SELECTED_SRC  = { 287.0f, 360.0f, 34.0f, 34.0f };
@@ -43,6 +43,12 @@ static const Vector2 ITEM_LIST_POSITIONS[ITEM_LIST_COUNT] = {
     { 311.5f, 114.0f }, { 461.5f, 114.0f },
     { 311.5f, 142.0f }, { 461.5f, 142.0f },
     { 311.5f, 170.0f }, { 461.5f, 170.0f },
+};
+
+static const char *const SLOT_NAME[IVY_SLOT_MAX] = {
+    "Hair", "InnerTop", "InnerBot", "MID", "BOT",
+    "ArmMain", "ArmSub", "AccHead", "AccBody", "ExtraBack",
+    "ExtraFloat"
 };
 
 IVY_INLINE void DrawAtlasRegion(const Texture2D *atlas, const Rectangle src, const Rectangle dst)
@@ -154,6 +160,40 @@ static void DrawInventoryLayout(const IvySceneGameplayData *restrict gameplayDat
     );
 }
 
+static void DrawEquippedItemIcons(const IvyGame *restrict game, const IvyVirtualScreen *restrict viewport)
+{
+    const IvySceneGameplayData *gd = game->scenes->actionScene->data;
+    const IvyInventory *inventory  = Ivy_Player_GetInventory(gd->player);
+    const float scale = viewport->scale;
+
+    for (int i = 0; i < EQUIP_SLOT_COUNT; i++) {
+        const u16 itemID = Ivy_Inventory_GetEquippedItemID(inventory, (u8)i);
+        if (itemID == 0) continue;
+
+        const IvyItemVisual *vis = Ivy_ItemManager_GetVisual(&gd->itemManager, itemID);
+        if (!vis) continue;
+
+        const Vector2 screenPos = Ivy_Gfx_GetScreenPos(viewport, EQUIP_SLOT_POSITIONS[i]);
+
+        DrawRectangleV(
+            (Vector2){ screenPos.x, screenPos.y },
+            (Vector2){ EQUIP_SLOT_SIZE * scale, EQUIP_SLOT_SIZE * scale },
+            (Color){ 255, 255, 255, 30 }
+        );
+
+        DrawAtlasRegion(
+            &gd->iconsAtlas,
+            vis->icon,
+            (Rectangle){
+                screenPos.x,
+                screenPos.y,
+                EQUIP_SLOT_SIZE * scale,
+                EQUIP_SLOT_SIZE * scale
+            }
+        );
+    }
+}
+
 static void DrawEquipSlots(const IvyGame *restrict game, const IvyVirtualScreen *restrict viewport)
 {
     const IvySceneGameplayData *gd = game->scenes->actionScene->data;
@@ -187,7 +227,9 @@ static void DrawItemList(const IvyGame *restrict game, const IvyVirtualScreen *r
 {
     const IvySceneGameplayData *gameplayData = game->scenes->actionScene->data;
     const IvyInventoryUI *ui = &gameplayData->inventoryUI;
-    const IvyInventoryBag *bag = &Ivy_Player_GetInventory(gameplayData->player)->bag;
+
+    const IvyInventory *inventory = Ivy_Player_GetInventory(gameplayData->player);
+    const IvyInventoryBag *bag = &inventory->bag;
     const float scale = viewport->scale;
 
     const u8 catOffset = bag->categoryOffset[IVY_ITEM_TYPE_EQUIPMENT];
@@ -206,6 +248,7 @@ static void DrawItemList(const IvyGame *restrict game, const IvyVirtualScreen *r
 
         const u8 bagIndex = bag->categoryIndices[catOffset + i];
         const u16 itemID  = bag->slot[bagIndex].itemID;
+        const IvyItemAttribute *attr = Ivy_ItemManager_GetAttribute(&gameplayData->itemManager, itemID);
 
         const IvyItemVisual *visual = Ivy_ItemManager_GetVisual(&gameplayData->itemManager, itemID);
         const char *itemName = Ivy_ItemManager_GetName(&gameplayData->itemManager, itemID);
@@ -225,21 +268,51 @@ static void DrawItemList(const IvyGame *restrict game, const IvyVirtualScreen *r
         const float textPadX   = ITEM_TEXT_OFFSET_X * scale;
         const Vector2 textSize = MeasureTextEx(game->fonts[IVY_FONT_SECONDARY], itemName, fontSize, 1.0f);
 
+        bool isEquipped = false;
+        for (usize s = 0; s < IVY_SLOT_MAX; s++) {
+            if (inventory->equipped.index[s] == bagIndex) {
+                isEquipped = true;
+                break;
+            }
+        }
+
+        char finalName[128];
+        if (isEquipped) {
+            snprintf(finalName, sizeof(finalName), "[E] %s", itemName);
+        } else {
+            snprintf(finalName, sizeof(finalName), "%s", itemName);
+        }
         DrawTextEx(
             game->fonts[IVY_FONT_SECONDARY],
-            itemName,
+            finalName,
             (Vector2){ screenPos.x + textPadX, screenPos.y + (slotDst.height - textSize.y) * 0.15f },
-            fontSize, 1.0f, WHITE
+            fontSize, 1.0f, isEquipped ? GREEN : WHITE
         );
 
         char countStr[16];
         snprintf(countStr, sizeof(countStr), "Stack: %d", bag->slot[bagIndex].quantity);
+
+        char slotStr[16];
+        snprintf(slotStr, sizeof(slotStr), "(%s)", SLOT_NAME[attr->slot]);
+        Vector2 slotTextSize = MeasureTextEx(game->fonts[IVY_FONT_SECONDARY], slotStr, fontSize, 1.0f);
+
+        const float textPadRight = 4 * scale;
 
         DrawTextEx(
             game->fonts[IVY_FONT_SECONDARY],
             countStr,
             (Vector2){ screenPos.x + textPadX, screenPos.y + (slotDst.height - textSize.y) * 0.75f },
             fontSize, 1.0f, GRAY
+        );
+
+        DrawTextEx(
+            game->fonts[IVY_FONT_SECONDARY],
+            slotStr,
+            (Vector2){
+                .x = (screenPos.x + slotDst.width) - slotTextSize.x - textPadRight,
+                .y = screenPos.y + (slotDst.height - textSize.y) * 0.75f
+            },
+            fontSize, 1.0f, GOLD
         );
     }
 }
@@ -256,6 +329,7 @@ void Ivy_Scene_GameplayDrawUI(IvyGame *game)
         DrawMenuBackground(gd, viewport);
         DrawMenuItems(game, gd, viewport);
         DrawInventoryLayout(gd, viewport);
+        DrawEquippedItemIcons(game, viewport);
 
         if (gd->inventoryUI.selectedSlot != INVENTORY_SLOT_NONE) {
             DrawEquipSlots(game, viewport);

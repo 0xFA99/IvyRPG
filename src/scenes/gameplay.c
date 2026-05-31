@@ -8,14 +8,14 @@
 #include "ivy/audio/ogg.h"
 #include "ivy/audio/stream.h"
 #include "ivy/systems/scene_manager.h"
-#include "ivy/graphics/tilemap.h"
-#include "ivy/entities/player.h"
-#include "ivy/graphics/collusion.h"
-#include "ivy/graphics/gfx.h"
 #include "ivy/systems/locale_manager.h"
-#include "ivy/utils/file_ids.h"
 #include "ivy/systems/inventory.h"
 #include "ivy/systems/profile_manager.h"
+#include "ivy/graphics/tilemap.h"
+#include "ivy/graphics/collusion.h"
+#include "ivy/graphics/gfx.h"
+#include "ivy/entities/player.h"
+#include "ivy/utils/file_ids.h"
 
 #include <stdio.h>
 
@@ -31,52 +31,54 @@ void Ivy_Scene_GameplayInit(IvyGame *game)
 {
     IVY_ASSERT(game != NULL, "[Scene Gameplay] Game pointer is NULL!");
 
-    IvySceneGameplayData *gd = Ivy_Arena_LinearAllocZero(&game->arena, sizeof(IvySceneGameplayData));
-    IVY_ASSERT(gd != NULL, "[Scene Gameplay] Failed to allocate SceneGameplayData!");
+    IvySceneGameplayData *gameplayData = Ivy_Arena_LinearAllocZero(&game->arena, sizeof(IvySceneGameplayData));
+    IVY_ASSERT(gameplayData != NULL, "[Scene Gameplay] Failed to allocate SceneGameplayData!");
 
-    // --- World ---
-    gd->tilemap      = Ivy_Tilemap_LoadMap(game->assets, &game->arena, ASSET_MAPS_MAP_1_METADATA_BIN, ASSET_MAPS_MAP_1_VERTEX_BIN);
-    gd->collusionMap = Ivy_Collusion_Load(&game->arena, game->assets);
-    gd->player       = Ivy_Player_Init(&game->arena, game->assets, (Vector2){ 10.0f, 16.0f });
-    gd->camera       = Ivy_Camera_Init();
-    gd->itemManager  = Ivy_ItemManager_Init(&game->arena, game->assets);
-    gd->state        = PAUSE_MENU_CLOSED;
+    gameplayData->tilemap      = Ivy_Tilemap_LoadMap(game->assets, &game->arena, ASSET_MAPS_MAP_1_METADATA_BIN, ASSET_MAPS_MAP_1_VERTEX_BIN);
+    gameplayData->collusionMap = Ivy_Collusion_Load(&game->arena, game->assets);
+    gameplayData->player       = Ivy_Player_Init(&game->arena, game->assets, (Vector2){ 10.0f, 16.0f });
+    gameplayData->camera       = Ivy_Camera_Init();
+    gameplayData->itemManager  = Ivy_ItemManager_Init(&game->arena, game->assets);
+    gameplayData->state        = PAUSE_MENU_CLOSED;
 
-    // --- Isi awal inventory (test data) ---
-    const IvyItemAttribute *shirtAttr = Ivy_ItemManager_GetAttribute(&gd->itemManager, 1);
-    const IvyItemAttribute *pantsAttr = Ivy_ItemManager_GetAttribute(&gd->itemManager, 2);
+    // test
+    const IvyItemAttribute *shirtAttr = Ivy_ItemManager_GetAttribute(&gameplayData->itemManager, 1);
+    const IvyItemAttribute *pantsAttr = Ivy_ItemManager_GetAttribute(&gameplayData->itemManager, 2);
+    const IvyItemAttribute *pantyAttr = Ivy_ItemManager_GetAttribute(&gameplayData->itemManager, 3);
+    const IvyItemAttribute *cloak = Ivy_ItemManager_GetAttribute(&gameplayData->itemManager, 4);
 
-    Ivy_Inventory_AddItem(&gd->player->inventory.bag, shirtAttr->id, shirtAttr->type, 3);
-    Ivy_Inventory_AddItem(&gd->player->inventory.bag, pantsAttr->id, pantsAttr->type, 2);
+    Ivy_Inventory_AddItem(&gameplayData->player->inventory.bag, shirtAttr->id, shirtAttr->type, 3);
+    Ivy_Inventory_AddItem(&gameplayData->player->inventory.bag, pantsAttr->id, pantsAttr->type, 2);
+    Ivy_Inventory_AddItem(&gameplayData->player->inventory.bag, pantyAttr->id, pantyAttr->type, 2);
+    Ivy_Inventory_AddItem(&gameplayData->player->inventory.bag, cloak->id, cloak->type, 2);
 
-    Ivy_Player_EquipItem(gd->player, game->assets, &gd->itemManager, 0);
-    Ivy_Player_EquipItem(gd->player, game->assets, &gd->itemManager, 1);
+    Ivy_Player_EquipItem(gameplayData->player, game->assets, &gameplayData->itemManager, 0);
+    Ivy_Player_EquipItem(gameplayData->player, game->assets, &gameplayData->itemManager, 1);
 
-    // --- Inventory UI ---
-    gd->inventoryUI.sound[0]        = Ivy_Audio_LoadSoundWav(&game->arena, game->assets, ASSET_AUDIO_EQUIP2_WAV);
-    gd->inventoryUI.sound[1]        = Ivy_Audio_LoadSoundWav(&game->arena, game->assets, ASSET_AUDIO_EQUIP3_WAV);
-    gd->inventoryUI.selectedSlot    = INVENTORY_SLOT_NONE;
-    gd->inventoryUI.scrollOffset    = 0;
-    gd->inventoryUI.visibleRows     = 4;
-    gd->inventoryUI.showDescription = true;
+    gameplayData->inventoryUI.sound[0]        = Ivy_Audio_LoadSoundWav(&game->arena, game->assets, ASSET_AUDIO_EQUIP2_WAV);
+    gameplayData->inventoryUI.sound[1]        = Ivy_Audio_LoadSoundWav(&game->arena, game->assets, ASSET_AUDIO_EQUIP3_WAV);
+    gameplayData->inventoryUI.selectedSlot    = INVENTORY_SLOT_NONE;
+    gameplayData->inventoryUI.scrollOffset    = 0;
+    gameplayData->inventoryUI.visibleRows     = 4;
+    gameplayData->inventoryUI.showDescription = true;
 
-    // --- Pause menu ---
     for (u32 i = 0; i < GAMEPLAY_MENU_SIZE; i++) {
-        gd->menu.menuStrings[i] = IVY_TR    (game->locale, (IvyLocaleKey)MENU_GAMEPLAY_PAUSE[i]);
-        gd->menu.menuLengths[i] = IVY_TR_LEN(game->locale, (IvyLocaleKey)MENU_GAMEPLAY_PAUSE[i]);
+        gameplayData->menu.menuStrings[i] = IVY_TR(game->locale, (IvyLocaleKey)MENU_GAMEPLAY_PAUSE[i]);
+        gameplayData->menu.menuLengths[i] = IVY_TR_LEN(game->locale, (IvyLocaleKey)MENU_GAMEPLAY_PAUSE[i]);
     }
-    gd->menu.selected = 0;
-    gd->menu.sound    = Ivy_Audio_LoadSoundWav(&game->arena, game->assets, ASSET_AUDIO_CURSOR_WAV);
 
-    // --- Audio & Textures ---
-    gd->music = Ivy_Audio_LoadMusicOGG(&game->arena, game->assets, ASSET_MUSIC_POINT_AND_CLICK_OGG, 192560);
-    Ivy_Audio_PlayAudioBuffer(gd->music.stream.buffer);
+    gameplayData->menu.selected = 0;
+    gameplayData->menu.sound    = Ivy_Audio_LoadSoundWav(&game->arena, game->assets, ASSET_AUDIO_CURSOR_WAV);
 
-    gd->background                 = Ivy_Gfx_LoadTextureDDS(game->assets, ASSET_TEXTURES_BACKGROUND_DDS);
-    gd->inventoryUI.background     = Ivy_Gfx_LoadTextureDDS(game->assets, ASSET_TEXTURES_MENU_EQUIPMENT_TEMPLATE_DDS);
-    gd->iconsAtlas                 = Ivy_Gfx_LoadTextureDDS(game->assets, ASSET_TEXTURES_ICONS_DDS);
+    // audio
+    gameplayData->music = Ivy_Audio_LoadMusicOGG(&game->arena, game->assets, ASSET_MUSIC_POINT_AND_CLICK_OGG, 192560);
+    Ivy_Audio_PlayAudioBuffer(gameplayData->music.stream.buffer);
 
-    game->scenes->actionScene->data = gd;
+    gameplayData->background                 = Ivy_Gfx_LoadTextureDDS(game->assets, ASSET_TEXTURES_BACKGROUND_DDS);
+    gameplayData->inventoryUI.background     = Ivy_Gfx_LoadTextureDDS(game->assets, ASSET_TEXTURES_MENU_EQUIPMENT_TEMPLATE_DDS);
+    gameplayData->iconsAtlas                 = Ivy_Gfx_LoadTextureDDS(game->assets, ASSET_TEXTURES_ICONS_DDS);
+
+    game->scenes->actionScene->data = gameplayData;
 }
 
 void Ivy_Scene_GameplayUnload(IvySceneManager *sm)

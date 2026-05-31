@@ -53,6 +53,27 @@ static void GameplayInventory(const IvyGame *game)
         if (ui->selectedSlot >= equipmentCount)
             ui->selectedSlot = 0;
 
+        if (IsKeyPressed(game->keybind[IVY_KEY_CONFIRM].currentKey)) {
+            const u8 catOffset = bag->categoryOffset[IVY_ITEM_TYPE_EQUIPMENT];
+            const u8 bagIndex  = bag->categoryIndices[catOffset + ui->selectedSlot];
+
+            bool wasEquipped = false;
+            for (usize s = 0; s < IVY_SLOT_MAX; s++) {
+                if (inventory->equipped.index[s] == bagIndex) {
+                    Ivy_Player_UnequipItem(gameplayData->player, game->assets, &gameplayData->itemManager, (u8)s);
+                    wasEquipped = true;
+                    break;
+                }
+            }
+
+            if (!wasEquipped) {
+                Ivy_Player_EquipItem(gameplayData->player, game->assets, &gameplayData->itemManager, bagIndex);
+            }
+
+            Ivy_Audio_PlayAudioBuffer(ui->sound[0].data.stream.buffer);
+            return;
+        }
+
         if (IsKeyPressed(KEY_RIGHT)) {
             if ((ui->selectedSlot % 2 == 0) && (ui->selectedSlot + 1 < equipmentCount))
                 ui->selectedSlot += 1;
@@ -80,6 +101,19 @@ static void GameplayInventory(const IvyGame *game)
     // slot layout
     if (ui->focus == INVENTORY_FOCUS_EQUIP_SLOTS)
     {
+        if (IsKeyPressed(game->keybind[IVY_KEY_CONFIRM].currentKey)) {
+            const u8 equipSlot = ui->selectedEquip;
+            const u16 itemID = Ivy_Inventory_GetEquippedItemID(
+                Ivy_Player_GetInventory(gameplayData->player), equipSlot
+            );
+            if (itemID != 0) {
+                Ivy_Player_UnequipItem(gameplayData->player, game->assets,
+                                       &gameplayData->itemManager, equipSlot);
+                Ivy_Audio_PlayAudioBuffer(ui->sound[0].data.stream.buffer);
+            }
+            return;
+        }
+
         const i8 *nav = EQUIP_NAVIGATION[ui->selectedEquip];
         i8 next = -1;
 
@@ -111,11 +145,6 @@ static void GameplayUpdateStatePause(IvyGame *game)
 
     if (direction) {
         gameplayData->menu.selected = (gameplayData->menu.selected + direction + GAMEPLAY_MENU_SIZE) % GAMEPLAY_MENU_SIZE;
-        Ivy_Audio_PlayAudioBuffer(gameplayData->menu.sound.data.stream.buffer);
-    }
-
-    if (gameplayData->menu.selected != GAMEPLAY_MENU_SIZE - 1 && IsKeyPressed(game->keybind[IVY_KEY_CANCEL].currentKey)) {
-        gameplayData->menu.selected = GAMEPLAY_MENU_SIZE - 1;
         Ivy_Audio_PlayAudioBuffer(gameplayData->menu.sound.data.stream.buffer);
     }
 

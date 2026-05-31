@@ -69,9 +69,9 @@ IvyPlayer *Ivy_Player_Init(IvyArenaLinear *restrict arena, IvyAssetManager *rest
     p->movement.tilePosition = pos;
     p->movement.position     = (Vector2){ pos.x * IVY_TILE_SIZE, pos.y * IVY_TILE_SIZE };
 
-    p->graphics.baseBody   = Ivy_Gfx_LoadTextureDDS(mgr, ASSET_TEXTURES_SPRITESHEET_BASE_BODY_DDS);
-    p->graphics.baseHead   = Ivy_Gfx_LoadTextureDDS(mgr, ASSET_TEXTURES_SPRITESHEET_BASE_HEAD_DDS);
-    p->graphics.baseHair   = Ivy_Gfx_LoadTextureDDS(mgr, ASSET_TEXTURES_SPRITESHEET_BASE_HAIR_DDS);
+    p->graphics.baseBody   = Ivy_Gfx_LoadTextureDDS(mgr, ASSET_TEXTURES_SPRITESHEETS_BASE_BODY_DDS);
+    p->graphics.baseHead   = Ivy_Gfx_LoadTextureDDS(mgr, ASSET_TEXTURES_SPRITESHEETS_BASE_HEAD_DDS);
+    p->graphics.baseHair   = Ivy_Gfx_LoadTextureDDS(mgr, ASSET_TEXTURES_SPRITESHEETS_BASE_HAIR_DDS);
     p->graphics.direction  = IVY_DIRECTION_DOWN;
     p->graphics.atlasReady = false;
 
