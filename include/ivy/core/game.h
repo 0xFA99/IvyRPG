@@ -23,19 +23,18 @@ enum {
 };
 
 struct IvyGame {
-    IvyArenaLinear          arena;                      // 64
+    IvyArenaLinear          arena;                      // 32
 
     const IvyKeybindInfo   *keybind;                    // 8
     IvyAssetManager        *assets;                     // 8
+    IvyTextureManager      *texManager;
     IvySceneManager        *scenes;                     // 8
     IvyVirtualScreen       *viewport;                   // 8
-    IvySaveManager         *saveManager;
+    IvySaveManager         *saveManager;                // 8
     IvyLocale              *locale;                     // 8
 
     Font                    fonts[IVY_FONT_MAX];        // 96
-    Texture2D               cursors[IVY_CURSOR_MAX];    // 40
-};                                                      // 240
-//IVY_ASSERT_STATIC(sizeof(IvyGame) == 240, "[IvyGame] Size must be 240 bytes!");
+};                                                      // 216
 
 IvyGame Ivy_Game_Init(Vector2 size);
 void    Ivy_Game_Update(IvyGame *game);

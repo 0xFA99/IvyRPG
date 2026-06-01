@@ -47,8 +47,6 @@ void Ivy_Audio_UnloadStream(const Music *music)
         Ivy_Audio_StopAudioBuffer(buffer);
     ma_mutex_unlock(&audioData->System.lock);
 
-    stb_vorbis_seek_start((stb_vorbis *)music->ctxData);
-
     Ivy_Audio_UnloadBuffer(buffer);
     stb_vorbis_close((stb_vorbis *)music->ctxData);
 }

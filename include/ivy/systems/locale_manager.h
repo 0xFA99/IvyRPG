@@ -33,7 +33,8 @@ extern "C" {
     X(PAUSE_MENU_RESUME)                    \
     X(PAUSE_MENU_SAVE_GAME)                 \
     X(PAUSE_MENU_LOAD_GAME)                 \
-    X(PAUSE_MENU_QUIT_TO_TITLE)
+    X(PAUSE_MENU_QUIT_TO_TITLE)             \
+    X(INVENTORY)
 
 typedef enum {
 #define X(name) name,

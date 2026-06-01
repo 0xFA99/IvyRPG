@@ -1,15 +1,13 @@
 #include "ivy/core/types.h"
-#include "ivy/graphics/tilemap.h"
-
-#include "ivy/systems/asset_manager.h"
 #include "ivy/arena/linear.h"
+#include "ivy/systems/asset_manager.h"
+#include "ivy/graphics/tilemap.h"
 #include "ivy/graphics/gfx.h"
 
 #include "raylib/rlgl.h"
 #include "raylib/raymath.h"
 
 #include <stdio.h>
-#include <stddef.h>
 #include <stdalign.h>
 #include <xmmintrin.h>
 
@@ -51,17 +49,20 @@ static void Tilemap_SetupDefaultShader(IvyTilemap *tilemap)
     tilemap->colDiffuseLoc = tilemap->shader.locs[SHADER_LOC_COLOR_DIFFUSE];
 }
 
-static const IvyDrawCmd *
-Tilemap_LoadCommands(IvyAssetManager *manager, const u32 vertex)
+static const IvyDrawCmd*
+Tilemap_LoadCommands(IvyAssetManager *manager, const u32 vertex, usize *out_count)
 {
     IVY_ASSERT(manager != NULL, "Asset manager must not be NULL");
 
     usize size;
-    const IvyDrawCmd *commands = (IvyDrawCmd *)Ivy_Asset_Get(manager, vertex, &size);
+    const void *raw = Ivy_Asset_Get(manager, vertex, &size);
+    IVY_CHECK(raw != NULL, "[Tilemap] Failed to load vertex binary asset (id=%d)", vertex);
 
-    IVY_CHECK(commands != NULL, "[Tilemap] Failed to load vertex binary asset (id=%d)", vertex);
+    IVY_ASSERT(size % sizeof(IvyDrawCmd) == 0, "[Tilemap] Invalid command data size: %zu bytes", size);
 
-    return commands;
+    *out_count = size / sizeof(IvyDrawCmd);
+
+    return (const IvyDrawCmd *)raw;
 }
 
 IVY_INLINE __m128 Tilemap_ComputeInvTexSize(const int texWidth, const int texHeight)
@@ -112,18 +113,20 @@ Tilemap_BuildQuadVertices(IvyVertex *restrict vertices, const int quadIndex, con
 }
 
 static IvyVertex*
-Tilemap_BuildVertexBuffer(IvyArenaLinear *restrict arena, const IvyDrawCmd *restrict commands, const int count, const __m128 invTexSize)
+Tilemap_BuildVertexBuffer(IvyArenaLinear *restrict arena, const void *restrict commandsRow, const int count, const __m128 invTexSize)
 {
-    IVY_ASSERT(arena    != NULL, "Arena must not be NULL");
-    IVY_ASSERT(commands != NULL, "Commands must not be NULL");
-    IVY_ASSERT(count > 0,        "Command count must be positive, got %d", count);
+    IVY_ASSERT(arena        != NULL, "Arena must not be NULL");
+    IVY_ASSERT(commandsRow != NULL, "Commands must not be NULL");
+    IVY_ASSERT(count > 0,            "Command count must be positive, got %d", count);
 
     IvyVertex *vertices = Ivy_Arena_LinearAlloc(arena, (usize)count * 6 * sizeof(IvyVertex));
-
     IVY_CHECK(vertices != NULL, "[Tilemap] Arena allocation failed for %d vertices", count * 6);
 
+    const char *raw = (const char *)commandsRow;
     for (int i = 0; i < count; i++) {
-        Tilemap_BuildQuadVertices(vertices, i, &commands[i], invTexSize);
+        IvyDrawCmd cmd;
+        memcpy(&cmd, raw + (i * sizeof(IvyDrawCmd)), sizeof(IvyDrawCmd));
+        Tilemap_BuildQuadVertices(vertices, i, &cmd, invTexSize);
     }
 
     return vertices;
@@ -140,8 +143,7 @@ Tilemap_UploadToGPU(IvyTilemap *restrict tilemap, const IvyVertex *restrict vert
 
     rlEnableVertexArray(tilemap->vaoId);
 
-    tilemap->vboId = rlLoadVertexBuffer(
-        vertices, tilemap->vertexCount * (int)sizeof(IvyVertex), false);
+    tilemap->vboId = rlLoadVertexBuffer(vertices, tilemap->vertexCount * (int)sizeof(IvyVertex), false);
     IVY_ENSURE(tilemap->vboId != 0);
 
     // loc 0 — vertexPosition
@@ -169,24 +171,27 @@ IvyTilemap *Ivy_Tilemap_LoadMap(IvyAssetManager *restrict manager, IvyArenaLinea
     // Setup default shader
     Tilemap_SetupDefaultShader(tilemap);
 
-    // Load header & tileset texture
     usize header_size;
-    const IvyTilemapHeader *header = Ivy_Asset_Get(manager, metadata, &header_size);
+    const void *header_raw = Ivy_Asset_Get(manager, metadata, &header_size);
+    IVY_CHECK(header_raw != NULL, "[Tilemap] Failed to load metadata asset (id=%d)", metadata);
 
-    IVY_CHECK(header != NULL, "[Tilemap] Failed to load metadata asset (id=%d)", metadata);
+    IvyTilemapHeader header;
+    memcpy(&header, header_raw, sizeof(IvyTilemapHeader));
 
-    tilemap->tilesetTex = Ivy_Gfx_LoadTextureDDS(manager, header->file_id);
+    tilemap->tilesetTex = Ivy_Gfx_LoadTextureDDS(manager, header.file_id);
     SetTextureFilter(tilemap->tilesetTex, TEXTURE_FILTER_POINT);
 
     const IvyArenaLinearSnapshot snap = Ivy_Arena_LinearGetSnapshot(arena);
 
-    const int              count    = header->totalCommands;
-    const IvyDrawCmd      *commands = Tilemap_LoadCommands(manager, vertex);
+    // Load commands
+    usize cmd_count = 0;
+    const IvyDrawCmd *commands = Tilemap_LoadCommands(manager, vertex, &cmd_count);
+    const int count = (int)cmd_count;
 
     // Build vertices
     tilemap->vertexCount        = count * 6;
     const __m128  invTexSize    = Tilemap_ComputeInvTexSize(tilemap->tilesetTex.width, tilemap->tilesetTex.height);
-    const IvyVertex *vertices   = Tilemap_BuildVertexBuffer(arena, commands, count, invTexSize);
+    const IvyVertex *vertices   = Tilemap_BuildVertexBuffer(arena, (const void *)commands, count, invTexSize);
 
     // Upload GPU
     Tilemap_UploadToGPU(tilemap, vertices);
@@ -231,6 +236,5 @@ void Ivy_Tilemap_Unload(const IvyTilemap *tilemap)
 
     rlUnloadVertexBuffer(tilemap->vboId);
     rlUnloadVertexArray(tilemap->vaoId);
-    // UnloadTexture(tilemap->tilesetTex);
     rlUnloadTexture(tilemap->tilesetTex.id);
 }

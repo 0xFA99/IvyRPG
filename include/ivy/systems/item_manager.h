@@ -1,5 +1,5 @@
-#ifndef IVY_CORE_ITEM_MANAGER_H
-#define IVY_CORE_ITEM_MANAGER_H
+#ifndef IVY_SYSTEMS_INVENTORY_H
+#define IVY_SYSTEMS_INVENTORY_H
 
 #include "ivy/core/types.h"
 #include "ivy/utils/forward.h"
@@ -11,27 +11,39 @@ extern "C" {
 #endif
 
 typedef struct {
-    Rectangle icon;         // 16
+    Rectangle   icon;           // 16
+    u32         spriteSheetID;  // 4
+    u32         portraitID;     // 4
+} IvyItemVisual;                // 24
 
-    u32 spriteSheet;        // 20
-    u32 portrait;           // 20
+typedef struct {
+    u16 id;         // 2
+    u8  category;   // 1
+    u8  type;       // 1
+    u8  slot;       // 1
+    u8  padding;    // 1
+} IvyItemAttribute; //  6
 
-    u16 id;                 // 2
-    u8 category;            // 1
-    u8 type;                // 1
-    u8 slot;                // 1
-
-    char name[32];          // 32
-    char description[64];   // 64
-    char padding[3];        // 3
-} IvyItem;                  // 128
+typedef struct {
+    u16 nameOffset; // 2
+    u16 descOffset; // 2
+} IvyItemText;      // 4
 
 struct IvyItemManager {
-    u16 totalItem;
-    IvyItem *items;
-};
+    IvyItemAttribute   *attributes;     // 8
+    IvyItemVisual      *visuals;        // 8
+    IvyItemText        *texts;          // 8
+    const char         *stringPool;     // 8
+    u16                 totalItem;      // 2
+    char                padding[6];     // 6
+};                                      // 40
 
-IvyItemManager Ivy_ItemManager_Init(IvyArenaLinear *restrict arena, IvyAssetManager *restrict assetManager);
+IvyItemManager          Ivy_ItemManager_Init(IvyArenaLinear *restrict arena, IvyAssetManager *restrict assetManager);
+const IvyItemAttribute *Ivy_ItemManager_GetAttribute(const IvyItemManager *mgr, u16 id);
+const IvyItemVisual    *Ivy_ItemManager_GetVisual(const IvyItemManager *mgr, u16 id);
+
+const char             *Ivy_ItemManager_GetName(const IvyItemManager *mgr, u16 id);
+const char             *Ivy_ItemManager_GetDesc(const IvyItemManager *mgr, u16 id);
 
 #ifdef __cplusplus
 }

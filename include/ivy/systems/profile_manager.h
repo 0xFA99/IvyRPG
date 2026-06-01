@@ -10,10 +10,6 @@
     #define NOUSER
 
     #include <windows.h>
-
-#else
-    #include <sys/stat.h>
-    #include <unistd.h>
 #endif
 
 #include <stdbool.h>
@@ -51,7 +47,7 @@ struct IvySaveManager {
     HANDLE           h_map;         // 8
 #else
     i32              fd;            // 4
-    u8               padding[4];       // 4
+    u8               padding[4];    // 4
 #endif
 };
 #ifdef _WIN32
@@ -62,17 +58,8 @@ struct IvySaveManager {
 
 IvySaveManager *Ivy_SaveManager_Init(IvyArenaLinear *restrict arena, const char *restrict path);
 void            Ivy_SaveManager_Destroy(IvySaveManager *mgr);
+bool            Ivy_SaveManager_Flush(const IvySaveManager *mgr);
 
-IVY_INLINE bool Ivy_SaveManager_Flush(const IvySaveManager *saveManager)
-{
-    IVY_ENSURE(saveManager != NULL);
-
-    if (IVY_UNLIKELY(!saveManager->mapped_data)) return false;
-
-    IVY_CHECK(FlushViewOfFile(saveManager->mapped_data, 0) && FlushFileBuffers(saveManager->h_file),
-              "[SaveManager] Failed to flush");
-    return true;
-}
 
 #ifdef __cplusplus
 }

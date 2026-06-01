@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.20)
 project(IvyRPG
         VERSION 1.0.0
-        DESCRIPTION "A top-down RPG game built with Raylib"
+        DESCRIPTION "A top-down RPG game built with Raylib using Native Unity Build"
         LANGUAGES C
 )
 
@@ -40,17 +40,12 @@ target_link_libraries(raylib INTERFACE ${PLATFORM_LIBS})
 function(ivy_set_warnings target)
     if(CMAKE_C_COMPILER_ID MATCHES "Clang")
         target_compile_options(${target} PRIVATE
-                -Wall
-                -Wextra
-                -Wpedantic
-                -Wno-unused-parameter
-                -Wshadow
+                -Wall -Wextra -Wpedantic
+                -Wno-unused-parameter -Wshadow
         )
     elseif(CMAKE_C_COMPILER_ID MATCHES "GNU")
         target_compile_options(${target} PRIVATE
-                -Wall
-                -Wextra
-                -Wpedantic
+                -Wall -Wextra -Wpedantic
                 -Wno-unused-parameter
         )
     endif()
@@ -71,21 +66,13 @@ function(ivy_set_build_options target)
 
     if(CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
         if(WIN32 AND CMAKE_C_COMPILER_ID MATCHES "Clang")
-            target_compile_options(${target} PRIVATE
-                    -g
-                    -gdwarf-4
-                    -gpubnames
-            )
+            target_compile_options(${target} PRIVATE -g -gdwarf-4 -gpubnames)
             target_link_options(${target} PRIVATE
                     -Wl,/debug
                     -Wl,/pdb:$<TARGET_FILE_DIR:${target}>/$<TARGET_FILE_BASE_NAME:${target}>.pdb
             )
-            message(STATUS "Debug info: DWARF4 + PDB for ${target}")
         else()
-            target_compile_options(${target} PRIVATE
-                    -g
-                    -gdwarf-4
-            )
+            target_compile_options(${target} PRIVATE -g -gdwarf-4)
         endif()
     endif()
 
@@ -99,93 +86,38 @@ function(ivy_set_build_options target)
     endif()
 
     if(CMAKE_BUILD_TYPE STREQUAL "Debug" AND CMAKE_SYSTEM_NAME STREQUAL "Linux")
-        target_compile_options(${target} PRIVATE
-                -fsanitize=address
-                -fsanitize=undefined
-        )
-        target_link_options(${target} PRIVATE
-                -fsanitize=address
-                -fsanitize=undefined
-        )
+        target_compile_options(${target} PRIVATE -fsanitize=address -fsanitize=undefined)
+        target_link_options(${target} PRIVATE -fsanitize=address -fsanitize=undefined)
         message(STATUS "ASan+UBSan enabled for ${target}")
     endif()
 endfunction()
 
-function(ivy_module NAME)
-    add_library(ivy_${NAME} STATIC ${ARGN})
-    target_include_directories(ivy_${NAME} PUBLIC ${INCLUDE_DIR})
-    target_link_libraries(ivy_${NAME} PUBLIC raylib)
+file(GLOB_RECURSE GAME_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/*.c")
 
-    if(NOT "${NAME}" STREQUAL "arena")
-        target_link_libraries(ivy_${NAME} PUBLIC ivy_arena)
+add_executable(${PROJECT_NAME} ${GAME_SOURCES})
+
+set_target_properties(${PROJECT_NAME} PROPERTIES
+        UNITY_BUILD ON
+        UNITY_BUILD_BATCH_SIZE 0
+)
+
+include(CheckIPOSupported)
+check_ipo_supported(RESULT lto_supported OUTPUT lto_error)
+
+if(lto_supported)
+    set_target_properties(${PROJECT_NAME} PROPERTIES INTERPROCEDURAL_OPTIMIZATION ON)
+    message(STATUS "Full LTO (IPO) berhasil diaktifkan untuk ${PROJECT_NAME}!")
+
+    if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
+        target_compile_options(${PROJECT_NAME} PRIVATE -flto=full)
+        target_link_options(${PROJECT_NAME} PRIVATE -flto=full)
     endif()
-
-    ivy_set_warnings(ivy_${NAME})
-    ivy_set_build_options(ivy_${NAME})
-endfunction()
-
-ivy_module(arena
-        src/arena/linear.c
-)
-
-ivy_module(audio
-        src/audio/buffer.c
-        src/audio/stream.c
-        src/audio/wav.c
-        src/audio/ogg.c
-)
-
-ivy_module(core
-        src/core/game.c
-        src/core/virtual.c
-        src/core/keybind.c
-)
-
-ivy_module(graphics
-        src/graphics/tilemap.c
-        src/graphics/camera.c
-        src/graphics/gfx.c
-        src/graphics/collusion.c
-)
-
-ivy_module(systems
-        src/systems/scene_manager.c
-        src/systems/asset_manager.c
-        src/systems/locale_manager.c
-        src/systems/item_manager.c
-        src/systems/profile_manager.c
-)
-
-ivy_module(scenes
-        src/scenes/title.c
-        src/scenes/gameplay.c
-        src/scenes/options/options.c
-        src/scenes/options/options_data.c
-        src/scenes/options/options_draw.c
-        src/scenes/options/options_helper.c
-        src/scenes/options/options_keybind.c
-        src/scenes/options/options_update.c
-)
-
-ivy_module(entities
-        src/entities/player.c
-)
-
-add_executable(${PROJECT_NAME} src/main.c)
+else()
+    message(WARNING "Full LTO tidak didukung oleh kompiler ini: ${lto_error}")
+endif()
 
 target_include_directories(${PROJECT_NAME} PRIVATE ${INCLUDE_DIR})
-
-target_link_libraries(${PROJECT_NAME} PRIVATE
-        ivy_arena
-        ivy_audio
-        ivy_core
-        ivy_graphics
-        ivy_systems
-        ivy_scenes
-        ivy_entities
-        raylib
-)
-
+target_link_libraries(${PROJECT_NAME} PRIVATE raylib)
 target_compile_definitions(${PROJECT_NAME} PRIVATE PLATFORM_DESKTOP)
 
 ivy_set_warnings(${PROJECT_NAME})
@@ -202,8 +134,7 @@ if(WIN32)
 endif()
 
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E make_directory
-        "$<TARGET_FILE_DIR:${PROJECT_NAME}>/assets"
+        COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:${PROJECT_NAME}>/assets"
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${ASSETS_DIR}/header.bin"
         "${ASSETS_DIR}/data.bin"
@@ -231,7 +162,7 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
 endif()
 
 message(STATUS "")
-message(STATUS "IvyRPG v${PROJECT_VERSION}")
+message(STATUS "IvyRPG v${PROJECT_VERSION} (Native Unity Build)")
 message(STATUS "  Compiler    : ${CMAKE_C_COMPILER_ID} ${CMAKE_C_COMPILER_VERSION}")
 message(STATUS "  C Standard  : C${CMAKE_C_STANDARD}")
 message(STATUS "  Build Type  : ${CMAKE_BUILD_TYPE}")

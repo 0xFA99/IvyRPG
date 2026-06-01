@@ -57,9 +57,6 @@ Texture2D Ivy_Gfx_LoadTextureDDS(IvyAssetManager *mgr, const u32 id)
     usize data_size;
     const u8 *data = (const u8 *)Ivy_Asset_Get(mgr, id, &data_size);
 
-    // skip 4 bytes magic, DDS header starts at 4.
-    const dds_header *header = (const dds_header *)(data + 4);
-
     // standard DDS, pixel data always starts at 128 bytes.
     const void *pixelData = data + 128;
 
@@ -68,11 +65,12 @@ Texture2D Ivy_Gfx_LoadTextureDDS(IvyAssetManager *mgr, const u32 id)
     glBindTexture(GL_TEXTURE_2D, texId);
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
-    const int w = (int)header->width;
-    const int h = (int)header->height;
+    u32 width, height;
+    memcpy(&width, data + 4 + offsetof(dds_header, width), sizeof(u32));
+    memcpy(&height, data + 4 + offsetof(dds_header, height), sizeof(u32));
 
     // DXT5, width * height (1 byte per 4x4 block)
-    glCompressedTexImage2D(GL_TEXTURE_2D, 0, GL_COMPRESSED_RGBA_S3TC_DXT5_EXT, w, h, 0, w * h, pixelData);
+    glCompressedTexImage2D(GL_TEXTURE_2D, 0, GL_COMPRESSED_RGBA_S3TC_DXT5_EXT, (int)width, (int)height, 0, (int)(width * height), pixelData);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -80,7 +78,7 @@ Texture2D Ivy_Gfx_LoadTextureDDS(IvyAssetManager *mgr, const u32 id)
 
     glBindTexture(GL_TEXTURE_2D, 0);
 
-    return (Texture2D) { texId, w, h, 1, PIXELFORMAT_COMPRESSED_DXT5_RGBA };
+    return (Texture2D) { texId, (int)width, (int)height, 1, PIXELFORMAT_COMPRESSED_DXT5_RGBA };
 }
 
 void Ivy_Gfx_UnloadTexture(Texture2D *texture)
@@ -95,8 +93,6 @@ Font Ivy_Gfx_LoadFont(IvyArenaLinear *restrict arena, IvyAssetManager *restrict 
     IVY_ASSERT(mgr != NULL, "[Gfx] Asset manager is NULL!");
 
     usize meta_size;
-    const IvyFontAtlasHeader *header = (const IvyFontAtlasHeader *)Ivy_Asset_Get(mgr, metaId, &meta_size);
-
     const Texture2D atlasTex = Ivy_Gfx_LoadTextureDDS(mgr, atlasId);
 
     GlyphInfo *glyphs = Ivy_Arena_LinearAlloc(arena, sizeof(GlyphInfo) * CODEPOINTS);
@@ -114,20 +110,36 @@ Font Ivy_Gfx_LoadFont(IvyArenaLinear *restrict arena, IvyAssetManager *restrict 
         .glyphs       = glyphs
     };
 
+    const u8 *rawData = (const u8 *)Ivy_Asset_Get(mgr, metaId, &meta_size);
+    const u8 *glyphsStart = rawData;
+
     for (i32 i = 0; i < CODEPOINTS; i++)
     {
-        const IvyGlyphInfo *src = &header->glyphs[i];
+        const u8 *ptr = glyphsStart + (i * 20);
 
-        font.glyphs[i].value    = (i32)src->codepoint;
-        font.glyphs[i].offsetX  = (i32)src->xoffset;
-        font.glyphs[i].offsetY  = (i32)src->yoffset;
-        font.glyphs[i].advanceX = (i32)src->xadvance;
+        i32 codepoint;
+        u16 x, y, width, height, xadvance;
+        i16 xoffset, yoffset;
+
+        memcpy(&codepoint, ptr + 0,  4);
+        memcpy(&x,         ptr + 4,  2);
+        memcpy(&y,         ptr + 6,  2);
+        memcpy(&width,     ptr + 8,  2);
+        memcpy(&height,    ptr + 10, 2);
+        memcpy(&xoffset,   ptr + 12, 2);
+        memcpy(&yoffset,   ptr + 14, 2);
+        memcpy(&xadvance,  ptr + 16, 2);
+
+        font.glyphs[i].value    = codepoint;
+        font.glyphs[i].offsetX  = (i32)xoffset;
+        font.glyphs[i].offsetY  = (i32)yoffset;
+        font.glyphs[i].advanceX = (i32)xadvance;
         font.glyphs[i].image    = (Image){0};
 
-        font.recs[i].x      = (float)src->x;
-        font.recs[i].y      = (float)src->y;
-        font.recs[i].width  = (float)src->width;
-        font.recs[i].height = (float)src->height;
+        font.recs[i].x          = (float)x;
+        font.recs[i].y          = (float)y;
+        font.recs[i].width      = (float)width;
+        font.recs[i].height     = (float)height;
     }
 
     return font;

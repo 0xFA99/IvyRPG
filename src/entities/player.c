@@ -1,4 +1,6 @@
 #include "ivy/entities/player.h"
+#include "ivy/systems/inventory.h"
+#include "ivy/systems/item_manager.h"
 
 #include "ivy/arena/linear.h"
 #include "ivy/audio/buffer.h"
@@ -9,81 +11,35 @@
 
 #include "raylib/rlgl.h"
 
-struct IvyPlayer {
-    IvyEquipment        equipment;
-    IvyPlayerGraphic    graphics;
-    IvyPlayerMovement   movement;
-    IvyPlayerAnimation  animation;
-    IvySound            stepSound[4];
+// Temporary Test
+static const u8 BAKE_SLOT_ORDER[] = {
+    IVY_SLOT_EXT_1,
+    IVY_SLOT_BOT,
+    IVY_SLOT_MID,
+    IVY_SLOT_ACC,
+    IVY_SLOT_HAIR,
 };
-
-IvyPlayer *Ivy_Player_Init(IvyArenaLinear *restrict arena, IvyAssetManager *restrict mgr, const Vector2 pos)
-{
-    IvyPlayer *p = Ivy_Arena_LinearAllocZero(arena, sizeof(IvyPlayer));
-
-    p->movement.tilePosition = pos;
-    p->movement.position     = (Vector2){ pos.x * IVY_TILE_SIZE, pos.y * IVY_TILE_SIZE };
-
-    p->graphics.baseBody = Ivy_Gfx_LoadTextureDDS(mgr, ASSET_TEXTURES_SPRITESHEET_BASE_BODY_DDS);
-    p->graphics.baseHead = Ivy_Gfx_LoadTextureDDS(mgr, ASSET_TEXTURES_SPRITESHEET_BASE_HEAD_DDS);
-    p->graphics.baseHair = Ivy_Gfx_LoadTextureDDS(mgr, ASSET_TEXTURES_SPRITESHEET_BASE_HAIR_DDS);
-    // p->graphics.baseHair = Ivy_Gfx_LoadTextureDDS(mgr, ASSET_HAIR_TWINBRAID_DDS);
-
-    // p->graphics.shirt   = Ivy_Gfx_LoadTextureDDS(mgr, ASSET_BASIC_SHIRT_DDS);
-    // p->graphics.pant = Ivy_Gfx_LoadTextureDDS(mgr, ASSET_BASIC_PANT_DDS);
-
-    p->graphics.direction = IVY_DIRECTION_DOWN;
-    p->graphics.atlasReady = false;
-
-    p->stepSound[0] = Ivy_Audio_LoadSoundWav(arena, mgr, ASSET_AUDIO_STEP1_WAV);
-    p->stepSound[1] = Ivy_Audio_LoadSoundWav(arena, mgr, ASSET_AUDIO_STEP2_WAV);
-    p->stepSound[2] = Ivy_Audio_LoadSoundWav(arena, mgr, ASSET_AUDIO_STEP3_WAV);
-    p->stepSound[3] = Ivy_Audio_LoadSoundWav(arena, mgr, ASSET_AUDIO_STEP4_WAV);
-
-    return p;
-}
-
-void Ivy_Player_BakeAtlas(IvyPlayer *player)
-{
-    player->equipment.atlas = LoadRenderTexture(player->graphics.baseBody.width, player->graphics.baseBody.height);
-
-    BeginTextureMode(player->equipment.atlas);
-        ClearBackground(BLANK);
-        DrawTexture(player->graphics.baseBody, 0, 0, WHITE);
-
-        DrawTexture(player->equipment.outerBottom, 0, 0, WHITE);
-        // DrawTexture(player->equipment.outerTop, 0, 0, WHITE);
-
-        DrawTexture(player->graphics.baseHead, 0, 0, WHITE);
-        DrawTexture(player->graphics.baseHair, 0, 0, WHITE);
-    EndTextureMode();
-
-    player->graphics.atlasReady = true;
-}
 
 static bool GetMovementInput(Vector2 *dir, IvyDirection *facing)
 {
-    // Reset
-    dir->x = 0;
-    dir->y = 0;
+    dir->x = 0.0f;
+    dir->y = 0.0f;
 
-    // Check Vertical
-    float v = (float)(IsKeyDown(KEY_DOWN) || IsKeyDown(KEY_S)) -
-              (float)(IsKeyDown(KEY_UP)   || IsKeyDown(KEY_W));
+    const float v = (float)(IsKeyDown(KEY_DOWN) || IsKeyDown(KEY_S)) -
+                    (float)(IsKeyDown(KEY_UP)   || IsKeyDown(KEY_W));
 
-    if (v != 0) {
-        dir->y = v;
-        *facing = (v > 0) ? IVY_DIRECTION_DOWN : IVY_DIRECTION_UP;
+    if (v != 0.0f) {
+        dir->y  = v;
+        *facing = (v > 0.0f) ? IVY_DIRECTION_DOWN : IVY_DIRECTION_UP;
         return true;
     }
 
-    // Check Horizontal
-    float h = (float)(IsKeyDown(KEY_RIGHT) || IsKeyDown(KEY_D)) -
-              (float)(IsKeyDown(KEY_LEFT)  || IsKeyDown(KEY_A));
+    const float h = (float)(IsKeyDown(KEY_RIGHT) || IsKeyDown(KEY_D)) -
+                    (float)(IsKeyDown(KEY_LEFT)  || IsKeyDown(KEY_A));
 
-    if (h != 0) {
-        dir->x = h;
-        *facing = (h > 0) ? IVY_DIRECTION_RIGHT : IVY_DIRECTION_LEFT;
+    if (h != 0.0f) {
+        dir->x  = h;
+        *facing = (h > 0.0f) ? IVY_DIRECTION_RIGHT : IVY_DIRECTION_LEFT;
         return true;
     }
 
@@ -101,7 +57,92 @@ static u32 GetSpriteRow(const IvyPlayer *p)
     }
 }
 
-void Ivy_Player_Update(IvyPlayer *player, const float dt, const IvyCollusionMap *collisionMap)
+IvyPlayer *Ivy_Player_Init(IvyArenaLinear *restrict arena, IvyAssetManager *restrict mgr, const Vector2 pos)
+{
+    IvyPlayer *p = Ivy_Arena_LinearAllocZero(arena, sizeof(IvyPlayer));
+
+    p->movement.tilePosition = pos;
+    p->movement.position     = (Vector2){ pos.x * IVY_TILE_SIZE, pos.y * IVY_TILE_SIZE };
+
+    p->graphics.baseBody   = Ivy_Gfx_LoadTextureDDS(mgr, ASSET_TEXTURES_SPRITESHEETS_BASE_BODY_DDS);
+    p->graphics.baseHead   = Ivy_Gfx_LoadTextureDDS(mgr, ASSET_TEXTURES_SPRITESHEETS_BASE_HEAD_DDS);
+    p->graphics.baseHair   = Ivy_Gfx_LoadTextureDDS(mgr, ASSET_TEXTURES_SPRITESHEETS_BASE_HAIR_DDS);
+    p->graphics.direction  = IVY_DIRECTION_DOWN;
+    p->graphics.atlasReady = false;
+
+    p->stepSound[0] = Ivy_Audio_LoadSoundWav(arena, mgr, ASSET_AUDIO_STEP1_WAV);
+    p->stepSound[1] = Ivy_Audio_LoadSoundWav(arena, mgr, ASSET_AUDIO_STEP2_WAV);
+    p->stepSound[2] = Ivy_Audio_LoadSoundWav(arena, mgr, ASSET_AUDIO_STEP3_WAV);
+    p->stepSound[3] = Ivy_Audio_LoadSoundWav(arena, mgr, ASSET_AUDIO_STEP4_WAV);
+
+    p->inventory = Ivy_Inventory_Init();
+
+    return p;
+}
+
+void Ivy_Player_BakeAtlas(IvyPlayer *restrict player, IvyAssetManager *restrict assetManager, const IvyItemManager *restrict itemMgr)
+{
+    if (player->graphics.atlasReady) {
+        rlUnloadTexture(player->graphics.atlas.texture.id);
+        rlUnloadFramebuffer(player->graphics.atlas.id);
+    }
+
+    player->graphics.atlas = LoadRenderTexture(
+        player->graphics.baseBody.width,
+        player->graphics.baseBody.height
+    );
+
+    BeginTextureMode(player->graphics.atlas);
+        ClearBackground(BLANK);
+        DrawTexture(player->graphics.baseBody, 0, 0, WHITE);
+        DrawTexture(player->graphics.baseHead, 0, 0, WHITE);
+
+        for (u32 i = 0; i < (u32)(sizeof(BAKE_SLOT_ORDER) / sizeof(BAKE_SLOT_ORDER[0])); i++) {
+            const u8  eSlot  = BAKE_SLOT_ORDER[i];
+            const u16 itemID = Ivy_Inventory_GetEquippedItemID(&player->inventory, eSlot);
+
+            // if (itemID == 0) {
+            //     if (eSlot == IVY_SLOT_HAIR) {
+            //         DrawTexture(player->graphics.baseHair, 0, 0, WHITE);
+            //     }
+            //     continue;
+            // }
+
+            const IvyItemVisual *vis = Ivy_ItemManager_GetVisual(itemMgr, itemID);
+            if (!vis) continue;
+
+            const Texture2D tex = Ivy_Gfx_LoadTextureDDS(assetManager, vis->spriteSheetID);
+            DrawTexture(tex, 0, 0, WHITE);
+        }
+
+        DrawTexture(player->graphics.baseHair, 0, 0, WHITE);
+
+    EndTextureMode();
+
+    player->graphics.atlasReady = true;
+}
+
+void Ivy_Player_EquipItem(IvyPlayer *restrict player, IvyAssetManager *restrict assetManager, const IvyItemManager *restrict itemMgr, const u8 bagIndex)
+{
+    const IvyInventoryBag *bag = &player->inventory.bag;
+    if (bagIndex >= bag->count) return;
+
+    const u16 itemID = bag->slot[bagIndex].itemID;
+    const IvyItemAttribute *attr = Ivy_ItemManager_GetAttribute(itemMgr, itemID);
+    if (!attr) return;
+
+    Ivy_Inventory_Equip(&player->inventory, bagIndex, attr->slot);
+    Ivy_Player_BakeAtlas(player, assetManager, itemMgr);
+}
+
+void Ivy_Player_UnequipItem(IvyPlayer *restrict player, IvyAssetManager *restrict assetManager, const IvyItemManager *restrict itemMgr, const u8 equipSlot)
+{
+    Ivy_Inventory_Unequip(&player->inventory, equipSlot);
+    Ivy_Player_BakeAtlas(player, assetManager, itemMgr);
+}
+
+void Ivy_Player_Update(IvyPlayer *player, const float dt,
+                        const IvyCollusionMap *collisionMap)
 {
     IvyPlayerMovement  *m = &player->movement;
     IvyPlayerAnimation *a = &player->animation;
@@ -114,104 +155,79 @@ void Ivy_Player_Update(IvyPlayer *player, const float dt, const IvyCollusionMap 
             if (player->graphics.direction != nextDir) {
                 player->graphics.direction = nextDir;
                 m->dirInputCount = 0;
-                m->justTurned = true;
-            } else {
-                if (++m->dirInputCount > IVY_DIR_DELAY || !m->justTurned) {
-
-                    /* ---- COLLISION CHECK ---- */
-                    const Vector2 candidateTile = {
-                        m->tilePosition.x + input.x,
-                        m->tilePosition.y + input.y
-                    };
-
-                    bool blocked = false;
-
-                    if (collisionMap != NULL) {
-                        blocked = Ivy_Collusion_IsTileSolid(
-                            collisionMap,
-                            (int)candidateTile.x,
-                            (int)candidateTile.y
-                        );
-                    }
-
-                    if (!blocked) {
-                        m->targetTile   = candidateTile;
-                        m->isMoving     = true;
-                        m->moveTimer    = 0.0f;
-                        m->justTurned   = false;
-                        player->graphics.action = PLAYER_ACTION_WALK;
-                    }
-                    /* If blocked, player stays in place – they can still
-                     * change direction on the next frame.                  */
+                m->justTurned    = true;
+            } else if (++m->dirInputCount > IVY_DIR_DELAY || !m->justTurned) {
+                const Vector2 candidate = {
+                    m->tilePosition.x + input.x,
+                    m->tilePosition.y + input.y
+                };
+                const bool blocked = collisionMap && Ivy_Collusion_IsTileSolid(collisionMap, (int)candidate.x, (int)candidate.y);
+                if (!blocked) {
+                    m->targetTile           = candidate;
+                    m->isMoving             = true;
+                    m->moveTimer            = 0.0f;
+                    m->justTurned           = false;
+                    player->graphics.action = PLAYER_ACTION_WALK;
                 }
             }
         } else {
             player->graphics.action = PLAYER_ACTION_IDLE;
-            m->dirInputCount = 0;
-            m->justTurned = false;
+            m->dirInputCount        = 0;
+            m->justTurned           = false;
         }
     }
 
     if (m->isMoving) {
         m->moveTimer += dt;
         float t = m->moveTimer / IVY_MOVE_DURATION;
-
         if (t >= 1.0f) {
-            t = 1.0f;
-            m->isMoving    = false;
+            t               = 1.0f;
+            m->isMoving     = false;
             m->tilePosition = m->targetTile;
         }
-
         m->position.x = m->tilePosition.x * IVY_TILE_SIZE + (m->targetTile.x - m->tilePosition.x) * IVY_TILE_SIZE * t;
         m->position.y = m->tilePosition.y * IVY_TILE_SIZE + (m->targetTile.y - m->tilePosition.y) * IVY_TILE_SIZE * t;
 
         a->frameTimer += dt;
         if (a->frameTimer >= IVY_ANIM_SPEED) {
             a->frameTimer = 0;
-
             if (a->frameStep == 0) a->frameStep = 1;
 
             const u32 oldFrame = a->currentFrame;
+            a->currentFrame   += a->frameStep;
 
-            a->currentFrame += a->frameStep;
-
-            if (a->currentFrame >= (IVY_WALK_FRAMES - 1)) {
+            if (a->currentFrame >= IVY_WALK_FRAMES - 1) {
                 a->currentFrame = IVY_WALK_FRAMES - 1;
-                a->frameStep = -1; // Balik mundur
-            }
-            else if (a->currentFrame <= 0) {
-                a->currentFrame = 0;
-                a->frameStep = 1;  // Maju lagi
+                a->frameStep    = -1;
+            } else if (a->currentFrame == 0) {
+                a->frameStep    = 1;
             }
 
-            if (a->currentFrame != oldFrame && (a->currentFrame == 0 || a->currentFrame == 2)) {
-                int randomIndex = GetRandomValue(0, 3);
-                Ivy_Audio_PlayAudioBuffer(player->stepSound[randomIndex].data.stream.buffer);
+            if (a->currentFrame != oldFrame &&
+                (a->currentFrame == 0 || a->currentFrame == 2)) {
+                Ivy_Audio_PlayAudioBuffer(player->stepSound[GetRandomValue(0, 3)].data.stream.buffer);
             }
         }
     } else {
-        // idle, back to normal frame
         a->currentFrame = 1;
-        a->frameTimer = 0;
-        a->frameStep = 1;
+        a->frameTimer   = 0;
+        a->frameStep    = 1;
     }
 }
 
 void Ivy_Player_Render(const IvyPlayer *p)
 {
-    const float offset = (IVY_FRAME_SIZE - IVY_TILE_SIZE) * 0.5f;
-    const Texture2D atlasTex = p->equipment.atlas.texture;
-
-    const float targetY = (float)GetSpriteRow(p) * IVY_FRAME_SIZE;
+    const float     offset   = (IVY_FRAME_SIZE - IVY_TILE_SIZE) * 0.5f;
+    const Texture2D atlasTex = p->graphics.atlas.texture;
+    const float     targetY  = (float)GetSpriteRow(p) * IVY_FRAME_SIZE;
 
     const Rectangle src = {
         (float)p->animation.currentFrame * IVY_FRAME_SIZE,
         (float)(atlasTex.height - IVY_FRAME_SIZE) - targetY,
-        (float)IVY_FRAME_SIZE,
+        (float) IVY_FRAME_SIZE,
         (float)-IVY_FRAME_SIZE
     };
-
-    Rectangle dst = {
+    const Rectangle dst = {
         p->movement.position.x - offset,
         p->movement.position.y - offset,
         (float)IVY_FRAME_SIZE,
@@ -223,23 +239,43 @@ void Ivy_Player_Render(const IvyPlayer *p)
 
 void Ivy_Player_Unload(IvyPlayer *player)
 {
-    if (player == NULL) return;
+    if (!player) return;
 
-    if (player->graphics.atlasReady) {
-        rlUnloadTexture(player->equipment.atlas.texture.id);
-        rlUnloadFramebuffer(player->equipment.atlas.id);
-
-        player->graphics.atlasReady = false;
+    // === FIX BANTAI MEMORY LEAK ATLAS PLAYER ===
+    // Jangan andalkan flag boolean (atlasReady), cek langsung handle ID OpenGL-nya!
+    if (player->graphics.atlas.texture.id > 0) {
+        // rlUnloadTexture(player->graphics.atlas.texture.id);
+        UnloadTexture(player->graphics.atlas.texture);
+        player->graphics.atlas.texture.id = 0;
     }
 
-    Ivy_Gfx_UnloadTexture(&player->graphics.baseBody);
-    Ivy_Gfx_UnloadTexture(&player->graphics.baseHead);
-    Ivy_Gfx_UnloadTexture(&player->graphics.baseHair);
+    if (player->graphics.atlas.id > 0) {
+        // rlUnloadFramebuffer(player->graphics.atlas.id);
+        UnloadTexture(player->graphics.atlas.texture);
+        player->graphics.atlas.id = 0;
+    }
 
-    Ivy_Audio_UnloadSound(&player->stepSound[0]);
-    Ivy_Audio_UnloadSound(&player->stepSound[1]);
-    Ivy_Audio_UnloadSound(&player->stepSound[2]);
-    Ivy_Audio_UnloadSound(&player->stepSound[3]);
+    player->graphics.atlasReady = false;
+
+    // === UNLOAD BASE BODY DAN HAIR ===
+    if (player->graphics.baseBody.id > 0) {
+        // rlUnloadTexture(player->graphics.baseBody.id);
+        UnloadTexture(player->graphics.baseBody);
+        player->graphics.baseBody.id = 0;
+    }
+
+    if (player->graphics.baseHair.id > 0) {
+        // rlUnloadTexture(player->graphics.baseHair.id);
+        UnloadTexture(player->graphics.baseHair);
+        player->graphics.baseHair.id = 0;
+    }
+
+    for (int i = 0; i < 4; i++) {
+        if (player->stepSound[i].data.stream.buffer != NULL) {
+            Ivy_Audio_UnloadBuffer(player->stepSound[i].data.stream.buffer);
+            player->stepSound[i].data.stream.buffer = NULL;
+        }
+    }
 }
 
 Vector2 Ivy_Player_GetPosition(const IvyPlayer *player)
@@ -247,14 +283,7 @@ Vector2 Ivy_Player_GetPosition(const IvyPlayer *player)
     return player->movement.position;
 }
 
-void Ivy_Player_EquipItem(IvyPlayer *restrict player, IvyAssetManager *restrict assetManager, IvyItemManager *restrict itemManager)
+IvyInventory *Ivy_Player_GetInventory(IvyPlayer *player)
 {
-    // player->graphics.shirt = &itemManager->items[0].spriteSheet;
-    // player->graphics.pants = &itemManager->items[1].spriteSheet;
-
-    // player->equipment.outerTop = Ivy_Gfx_LoadTextureDDS(assetManager, ASSET_TEXTURES_SPRITESHEETS_NOVICE_SHIRT_DDS);
-    // player->equipment.outerBottom = Ivy_Gfx_LoadTextureDDS(assetManager, ASSET_TEXTURES_SPRITESHEETS_NOVICE_PANTS_DDS);
-    player->equipment.outerBottom = Ivy_Gfx_LoadTextureDDS(assetManager, ASSET_TEXTURES_SPRITESHEETS_NOVICE_PANTY_DDS);
-
-    Ivy_Player_BakeAtlas(player);
+    return &player->inventory;
 }

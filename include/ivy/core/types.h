@@ -80,38 +80,48 @@ extern "C" {
 
 #else
     #define IVY_ASSERT(condition, ...) ((void)sizeof(condition))
-    #define IVY_CHECK(cond, fmt, ...)  ((void)sizeof(cond))
+    #define IVY_CHECK(cond, ...) ((void)sizeof(cond))
     #define IVY_ENSURE(cond) do { if (!(cond)) IVY_UNREACHABLE; } while (0)
 #endif
 
-#define IVY_ICON_SIZE 24
+#define IVY_ICON_SIZE   24
+#define IVY_SLOT_EMPTY  255
+#define IVY_FONT_SIZE   64
 
 typedef enum {
     IVY_CATEGORY_WEAPON,
     IVY_CATEGORY_HELM,
     IVY_CATEGORY_ARMOR,
     IVY_CATEGORY_LEGS,
-    IVY_CATEGORY_CAPE
+    IVY_CATEGORY_CAPE,
+    IVY_CATEGORY_MAX
 } IvyItemCategory;
 
 typedef enum {
-    IVY_TYPE_EQUIPMENT,
-    IVY_TYPE_CONSUMPTION,
-    IVY_TYPE_MISC
+    IVY_ITEM_TYPE_EQUIPMENT,
+    IVY_ITEM_TYPE_CONSUMPTION,
+    IVY_ITEM_TYPE_MISC,
+    IVY_ITEM_TYPE_MAX
 } IvyItemType;
 
 typedef enum {
-    IVY_SLOT_HAIR = 0,
-    IVY_SLOT_INNER_TOP,
-    IVY_SLOT_INNER_BOTTOM,
-    IVY_SLOT_OUTER_TOP,
-    IVY_SLOT_OUTER_BOTTOM,
-    IVY_SLOT_ARM_MAIN,
-    IVY_SLOT_ARM_SUB,
-    IVY_SLOT_ACC_HEAD,
-    IVY_SLOT_ACC_BODY,
-    IVY_SLOT_EXTRA_BACK,
-    IVY_SLOT_EXTRA_FLOAT,
+    IVY_SLOT_HEAD = 0,
+
+    IVY_SLOT_TOP_EXT,
+    IVY_SLOT_HAIR,
+    IVY_SLOT_ACC,
+
+    IVY_SLOT_TOP,
+    IVY_SLOT_MID,
+    IVY_SLOT_ACC_2,
+
+    IVY_SLOT_M_ARM,
+    IVY_SLOT_MID_EXT,
+    IVY_SLOT_S_ARM,
+
+    IVY_SLOT_EXT_1,
+    IVY_SLOT_BOT,
+    IVY_SLOT_EXT_2,
 
     IVY_SLOT_MAX
 } IvyEquipmentSlot;
@@ -121,7 +131,6 @@ typedef enum {
     IVY_DIRECTION_DOWN,
     IVY_DIRECTION_LEFT,
     IVY_DIRECTION_RIGHT,
-
     IVY_DIRECTION_MAX
 } IvyDirection;
 
@@ -130,10 +139,8 @@ typedef enum {
     IVY_KEY_DOWN,
     IVY_KEY_LEFT,
     IVY_KEY_RIGHT,
-
     IVY_KEY_CONFIRM,
     IVY_KEY_CANCEL,
-
     IVY_KEY_MAX
 } IvyKeybind;
 

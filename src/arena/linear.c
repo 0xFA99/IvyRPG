@@ -1,3 +1,4 @@
+#include "ivy/core/types.h"
 #include "ivy/arena/linear.h"
 
 #include <stdlib.h>

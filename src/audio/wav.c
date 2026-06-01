@@ -45,7 +45,7 @@ IvySound Ivy_Audio_LoadSoundWav(IvyArenaLinear *restrict arena,
     const ma_format formatIn = (wave.sampleSize == 8)  ? ma_format_u8  :
                                (wave.sampleSize == 16) ? ma_format_s16 : ma_format_f32;
 
-    IvyAudioData *audioData = Ivy_Audio_GetAudioData();
+    const IvyAudioData *audioData = Ivy_Audio_GetAudioData();
     IVY_ENSURE(audioData != NULL);
     IVY_ENSURE(audioData->System.isReady);
 
