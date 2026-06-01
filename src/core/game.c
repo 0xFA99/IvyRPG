@@ -5,10 +5,9 @@
 #include "ivy/systems/scene_manager.h"
 #include "ivy/systems/locale_manager.h"
 #include "ivy/systems/profile_manager.h"
+#include "ivy/systems/texture_manager.h"
 #include "ivy/graphics/gfx.h"
 #include "ivy/utils/file_ids.h"
-
-#include "raylib/rlgl.h"
 
 #define IVY_ASSET_HEADER    "assets/header.bin"
 #define IVY_ASSET_DATA      "assets/data.bin"
@@ -19,13 +18,14 @@ IvyGame Ivy_Game_Init(const Vector2 size)
     IvyGame game = {0};
 
     // Arena
-    Ivy_Arena_LinearInit(&game.arena, 1560192);
+    Ivy_Arena_LinearInit(&game.arena, 1560288);
 
     // Save Manager
     game.saveManager = Ivy_SaveManager_Init(&game.arena, IVY_SAVE_PATH);
 
     // Game Asset & Locale
     game.assets = Ivy_AssetManager_Init(&game.arena, IVY_ASSET_HEADER, IVY_ASSET_DATA);
+    game.texManager = Ivy_TextureManager_Init(&game.arena, game.assets);
 
     // Load locale
     const u32 localeID = game.saveManager->save->profile.localeID;
@@ -40,12 +40,6 @@ IvyGame Ivy_Game_Init(const Vector2 size)
     game.fonts[IVY_FONT_SECONDARY]  = Ivy_Gfx_LoadFont(&game.arena, game.assets, ASSET_FONTS_NOTOSANSCJK_METADATA_BIN, ASSET_FONTS_NOTOSANSCJK_ATLAS_DDS, IVY_FONT_SIZE);
     SetTextureFilter(game.fonts[IVY_FONT_PRIMARY].texture,   TEXTURE_FILTER_BILINEAR);
     SetTextureFilter(game.fonts[IVY_FONT_SECONDARY].texture, TEXTURE_FILTER_BILINEAR);
-
-    // Cursors
-    game.cursors[IVY_CURSOR_PRIMARY]   = Ivy_Gfx_LoadTextureDDS(game.assets, ASSET_TEXTURES_CURSOR_WHITE_DDS);
-    game.cursors[IVY_CURSOR_SECONDARY] = Ivy_Gfx_LoadTextureDDS(game.assets, ASSET_TEXTURES_CURSOR_YELLOW_DDS);
-    SetTextureFilter(game.cursors[IVY_CURSOR_PRIMARY],   TEXTURE_FILTER_BILINEAR);
-    SetTextureFilter(game.cursors[IVY_CURSOR_SECONDARY], TEXTURE_FILTER_BILINEAR);
 
     // Keybind
     game.keybind = Ivy_Keybind_GetKeybindInfo();
@@ -102,10 +96,9 @@ void Ivy_Game_Destroy(IvyGame *game)
     Ivy_Gfx_UnloadFont(&game->fonts[IVY_FONT_PRIMARY]);
     Ivy_Gfx_UnloadFont(&game->fonts[IVY_FONT_SECONDARY]);
 
-    rlUnloadTexture(game->cursors[IVY_CURSOR_PRIMARY].id);
-    rlUnloadTexture(game->cursors[IVY_CURSOR_SECONDARY].id);
-
     Ivy_VirtualScreen_Unload(game->viewport);
+
+    Ivy_TextureManager_Destroy(game->texManager);
 
     Ivy_Arena_LinearDestroy(&game->arena);
 }

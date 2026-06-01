@@ -53,8 +53,6 @@ typedef struct {
 } IvyGameplayMenu;
 
 struct IvySceneGameplayData {
-    Texture2D background;
-    Texture2D iconsAtlas;
     IvyTilemap  *tilemap;
     IvyPlayer   *player;
     IvyCamera   camera;

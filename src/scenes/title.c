@@ -1,154 +1,148 @@
 #include "ivy/core/game.h"
 #include "ivy/core/keybind.h"
 #include "ivy/audio/buffer.h"
-#include "ivy/systems/locale_manager.h"
-#include "ivy/systems/scene_manager.h"
-#include "ivy/scenes/title.h"
-
 #include "ivy/audio/ogg.h"
 #include "ivy/audio/stream.h"
+#include "ivy/systems/locale_manager.h"
+#include "ivy/systems/scene_manager.h"
+#include "ivy/systems/texture_manager.h"
+#include "ivy/scenes/title.h"
 #include "ivy/graphics/gfx.h"
 #include "ivy/utils/file_ids.h"
 
-#include "raylib/rlgl.h"
+#define TITLE_MAIN_MENU_LOCALE_OFFSET 5
+#define TITLE_MAIN_MENU_CURSOR_X      10
+#define TITLE_MAIN_MENU_TEXT_X        28
+#define TITLE_MAIN_MENU_SPACING       16
+#define TITLE_MAIN_MENU_TEXT_SIZE     14
+#define TITLE_MAIN_MENU_MARGIN_BOTTOM 36
 
-enum {
-    LOCALE_OFFSET  = 5,
-    CURSOR_X       = 10,
-    TEXT_X         = 28,
-    MENU_SPACING   = 16,
-    TEXT_SIZE      = 14,
-    MARGIN_BOTTOM  = 36,
-};
-
-static const float CURSOR_SPEED = 0.4f;
-static const float CURSOR_SCALE = 0.5f;
-
-void Ivy_Scene_TitleInit(IvyGame *g)
+void Ivy_Scene_TitleInit(IvyGame *game)
 {
-    IvySceneTitleData *sd = Ivy_Arena_LinearAllocZero(&g->arena, sizeof(*sd));
-    IVY_ENSURE(sd);
+    IvySceneTitleData *titleData = Ivy_Arena_LinearAllocZero(&game->arena, sizeof(*titleData));
+    IVY_ENSURE(titleData);
 
-    sd->background = Ivy_Gfx_LoadTextureDDS(g->assets, ASSET_TEXTURES_BACKGROUND_DDS);
-    SetTextureFilter(sd->background, TEXTURE_FILTER_POINT);
-
-    const IvyLocale *loc = g->locale;
+    const IvyLocale *locale = game->locale;
     for (u32 i = 0; i < MENU_COUNT; i++) {
-        const u32 key = i + LOCALE_OFFSET;
-        sd->menuStrings[i] = IVY_TR(loc, (IvyLocaleKey)key);
-        sd->menuLengths[i] = IVY_TR_LEN(loc, (IvyLocaleKey)key);
+        const u32 key = i + TITLE_MAIN_MENU_LOCALE_OFFSET;
+        titleData->menuStrings[i] = IVY_TR(locale, (IvyLocaleKey)key);
+        titleData->menuLengths[i] = IVY_TR_LEN(locale, (IvyLocaleKey)key);
     }
 
-    sd->targetY = 0.0f;
+    titleData->targetY = 0.0f;
 
-    sd->music = Ivy_Audio_LoadMusicOGG(&g->arena, g->assets, ASSET_MUSIC_BARREN_AMBIENCE_OGG, 199769);
-    PlayMusicStream(sd->music);
+    titleData->music = Ivy_Audio_LoadMusicOGG(&game->arena, game->assets, ASSET_MUSIC_BARREN_AMBIENCE_OGG, 199769);
+    PlayMusicStream(titleData->music);
 
-    sd->sound = Ivy_Audio_LoadSoundWav(&g->arena, g->assets, ASSET_AUDIO_CURSOR_WAV);
-    g->scenes->actionScene->data = sd;
+    titleData->sound = Ivy_Audio_LoadSoundWav(&game->arena, game->assets, ASSET_AUDIO_CURSOR_WAV);
+    game->scenes->actionScene->data = titleData;
 }
 
-void Ivy_Scene_TitleUpdate(IvyGame *g)
+void Ivy_Scene_TitleUpdate(IvyGame *game)
 {
-    IvySceneTitleData *sd = g->scenes->actionScene->data;
+    IvySceneTitleData *titleData = game->scenes->actionScene->data;
 
-    Ivy_Audio_UpdateMusicOGG(&sd->music);
+    Ivy_Audio_UpdateMusicOGG(&titleData->music);
 
-    // Navigation (branchless modulo)
-    const int dir = IsKeyPressed(KEY_DOWN) - IsKeyPressed(KEY_UP);
+    const int direction = IsKeyPressed(Ivy_Keybind_GetCurrentKey(game->keybind, IVY_KEY_DOWN))
+                        - IsKeyPressed(Ivy_Keybind_GetCurrentKey(game->keybind, IVY_KEY_UP));
 
-    if (dir != 0) {
-        Ivy_Audio_PlayAudioBuffer(sd->sound.data.stream.buffer);
-        sd->selected = (sd->selected + dir + MENU_COUNT) % MENU_COUNT;
+    if (direction != 0) {
+        Ivy_Audio_PlayAudioBuffer(titleData->sound.data.stream.buffer);
+        titleData->selected = (titleData->selected + direction + MENU_COUNT) % MENU_COUNT;
     }
 
     // Confirm
-    if (IsKeyPressed(g->keybind[IVY_KEY_CONFIRM].currentKey)) {
-        switch (sd->selected) {
+    if (IsKeyPressed(game->keybind[IVY_KEY_CONFIRM].currentKey))
+    {
+        switch (titleData->selected) {
             case MENU_NEW_GAME:
             case MENU_CONTINUE:
-                Ivy_SceneManager_Transition(g, SCENE_GAMEPLAY);
+                Ivy_SceneManager_Transition(game, SCENE_GAMEPLAY);
                 break;
+
             case MENU_OPTIONS:
-                Ivy_SceneManager_Transition(g, SCENE_OPTIONS);
+                Ivy_SceneManager_Transition(game, SCENE_OPTIONS);
                 break;
-            case MENU_EXIT: {
-                g->scenes->shouldExit = true;
-            } break;
+
+            case MENU_EXIT:
+                game->scenes->shouldExit = true;
+                break;
+
             default: break;
         }
     }
 
-    if (IsKeyPressed(KEY_ESCAPE)) g->scenes->shouldExit = true;
+    if (IsKeyPressed(KEY_ESCAPE)) game->scenes->shouldExit = true;
 }
 
-void Ivy_Scene_TitleDrawWorld(IvyGame *g)
+void Ivy_Scene_TitleDrawWorld(IvyGame *game)
 {
-    const IvySceneTitleData *sd = g->scenes->actionScene->data;
-    DrawTexturePro(sd->background,
-        (Rectangle){0, 0, (float)sd->background.width, (float)sd->background.height},
+    const Texture2D background = Ivy_TextureManager_Get(game->texManager, ASSET_TEXTURES_BACKGROUND_DDS);
+
+    DrawTexturePro(background,
+        (Rectangle){0, 0, (float)background.width, (float)background.height},
         (Rectangle){0, 0, VIRTUAL_WIDTH, VIRTUAL_HEIGHT},
         (Vector2){0}, 0.0f, WHITE);
 }
 
-void Ivy_Scene_TitleDrawUI(IvyGame *g)
+void Ivy_Scene_TitleDrawUI(IvyGame *game)
 {
-    IvySceneTitleData *sd = g->scenes->actionScene->data;
-    const IvyVirtualScreen *vr = g->viewport;
-    const Texture2D *cursor = &g->cursors[IVY_CURSOR_PRIMARY];
-    const float scale = vr->scale;
+    IvySceneTitleData *titleData     = game->scenes->actionScene->data;
+    const IvyVirtualScreen *viewport = game->viewport;
+    const Texture2D cursorTex        = Ivy_TextureManager_Get(game->texManager, ASSET_TEXTURES_CURSOR_WHITE_DDS);
+    const float scale                = viewport->scale;
 
     // Menu start position
-    const float menuY = VIRTUAL_HEIGHT - MARGIN_BOTTOM - (MENU_COUNT - 1) * MENU_SPACING;
+    const float menuY = VIRTUAL_HEIGHT - TITLE_MAIN_MENU_MARGIN_BOTTOM - (MENU_COUNT - 1) * TITLE_MAIN_MENU_SPACING;
 
     // Calculate text height for centering cursor
-    const float textHeight = TEXT_SIZE * scale;
-    const float cursorHeight = (float)cursor->height * scale * CURSOR_SCALE;
+    const float textHeight = TITLE_MAIN_MENU_TEXT_SIZE * scale;
+    const float cursorHeight = (float)cursorTex.height * scale * 0.5f;
     const float verticalOffset = (textHeight - cursorHeight) * 0.25f;
 
     // Cursor target
-    if (sd->targetY == 0.0f) {
-        sd->targetY = menuY + (float)sd->selected * MENU_SPACING + verticalOffset;
-        sd->cursorY = sd->targetY;
+    if (titleData->targetY == 0.0f) {
+        titleData->targetY = menuY + (float)titleData->selected * TITLE_MAIN_MENU_SPACING + verticalOffset;
+        titleData->cursorY = titleData->targetY;
     } else {
-        sd->targetY = menuY + (float)sd->selected * MENU_SPACING + verticalOffset;
+        titleData->targetY = menuY + (float)titleData->selected * TITLE_MAIN_MENU_SPACING + verticalOffset;
     }
 
     // Smooth cursor
-    sd->cursorY += (sd->targetY - sd->cursorY) * CURSOR_SPEED;
+    titleData->cursorY += (titleData->targetY - titleData->cursorY) * 0.4f;
 
     // Draw cursor
-    DrawTextureEx(*cursor,
-        Ivy_Gfx_GetScreenPos(vr, (Vector2){CURSOR_X, sd->cursorY}),
-        0.0f, scale * CURSOR_SCALE, WHITE);
+    DrawTextureEx(cursorTex,
+        Ivy_Gfx_GetScreenPos(viewport, (Vector2){ TITLE_MAIN_MENU_CURSOR_X, titleData->cursorY }),
+        0.0f, scale * 0.5f, WHITE);
 
     // Draw menu items
     for (u32 i = 0; i < MENU_COUNT; i++) {
         Ivy_Gfx_DrawLocaleText(
-            g->fonts[IVY_FONT_PRIMARY],
-            sd->menuStrings[i],
-            sd->menuLengths[i],
-            Ivy_Gfx_GetScreenPos(vr, (Vector2){TEXT_X, menuY + (float)i * MENU_SPACING}),
-            TEXT_SIZE * scale,
+            game->fonts[IVY_FONT_PRIMARY],
+            titleData->menuStrings[i],
+            titleData->menuLengths[i],
+            Ivy_Gfx_GetScreenPos(viewport, (Vector2){TITLE_MAIN_MENU_TEXT_X, menuY + (float)i * TITLE_MAIN_MENU_SPACING}),
+            TITLE_MAIN_MENU_TEXT_SIZE * scale,
             1,
-            i == sd->selected ? WHITE : GRAY
+            i == titleData->selected ? WHITE : GRAY
         );
     }
 }
 
-void Ivy_Scene_TitleRebuildTextures(IvyGame *g)
+void Ivy_Scene_TitleRebuildTextures(IvyGame *game)
 {
-    (void)g;
+    (void)game;
 }
 
-void Ivy_Scene_TitleUnload(IvySceneManager *sm)
+void Ivy_Scene_TitleUnload(IvySceneManager *sceneManager)
 {
-    if (!sm->actionScene->data) return;
+    if (!sceneManager->actionScene->data) return;
 
-    const IvySceneTitleData *sd = sm->actionScene->data;
-    rlUnloadTexture(sd->background.id);
+    const IvySceneTitleData *sd = sceneManager->actionScene->data;
     Ivy_Audio_UnloadStream(&sd->music);
     Ivy_Audio_UnloadSound(&sd->sound);
 
-    sm->actionScene->data = NULL;
+    sceneManager->actionScene->data = NULL;
 }

@@ -23,9 +23,13 @@ void                  Ivy_Keybind_Load(const IvySaveManager *saveManager);
 void                  Ivy_Keybind_Update(const IvySaveManager *saveManager, IvyKeybind keybind, int key);
 void                  Ivy_Keybind_Reset(const IvySaveManager *saveManager);
 
-// TODO: Add keybind loader and save!
-// void            Ivy_Keybind_Load(void);
-// void            Ivy_Keybind_Save(void);
+const char           *Ivy_Keybind_GetKeyName(int key);
+
+IVY_INLINE int Ivy_Keybind_GetCurrentKey(const IvyKeybindInfo *keybind, const u32 key)
+{
+    IVY_ASSERT(keybind != NULL, "[IvyKeybind] Keybind is NULL!");
+    return keybind[key].currentKey;
+}
 
 #ifdef __cplusplus
 }

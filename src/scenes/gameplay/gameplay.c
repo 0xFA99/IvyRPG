@@ -19,6 +19,8 @@
 
 #include <stdio.h>
 
+#include "raylib/rlgl.h"
+
 static const u16 MENU_GAMEPLAY_PAUSE[GAMEPLAY_MENU_SIZE] = {
     GAMEPLAY_MENU_RESUME,
     GAMEPLAY_MENU_SAVE,
@@ -74,10 +76,7 @@ void Ivy_Scene_GameplayInit(IvyGame *game)
     gameplayData->music = Ivy_Audio_LoadMusicOGG(&game->arena, game->assets, ASSET_MUSIC_POINT_AND_CLICK_OGG, 192560);
     Ivy_Audio_PlayAudioBuffer(gameplayData->music.stream.buffer);
 
-    gameplayData->background                 = Ivy_Gfx_LoadTextureDDS(game->assets, ASSET_TEXTURES_BACKGROUND_DDS);
     gameplayData->inventoryUI.background     = Ivy_Gfx_LoadTextureDDS(game->assets, ASSET_TEXTURES_MENU_EQUIPMENT_TEMPLATE_DDS);
-    gameplayData->iconsAtlas                 = Ivy_Gfx_LoadTextureDDS(game->assets, ASSET_TEXTURES_ICONS_DDS);
-
     game->scenes->actionScene->data = gameplayData;
 }
 
@@ -86,6 +85,8 @@ void Ivy_Scene_GameplayUnload(IvySceneManager *sm)
     if (IVY_UNLIKELY(!sm->actionScene || !sm->actionScene->data)) return;
 
     const IvySceneGameplayData *gd = sm->actionScene->data;
+
+    rlUnloadTexture(gd->inventoryUI.background.id);
 
     Ivy_Tilemap_Unload(gd->tilemap);
     Ivy_Collusion_Unload(gd->collusionMap);

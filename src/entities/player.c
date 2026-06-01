@@ -11,18 +11,13 @@
 
 #include "raylib/rlgl.h"
 
+// Temporary Test
 static const u8 BAKE_SLOT_ORDER[] = {
-    IVY_SLOT_EXTRA_BACK,
-    IVY_SLOT_OUTER_BOTTOM,
-    IVY_SLOT_INNER_BOTTOM,
-    IVY_SLOT_INNER_TOP,
-    IVY_SLOT_OUTER_TOP,
-    IVY_SLOT_ARM_SUB,
-    IVY_SLOT_ARM_MAIN,
-    IVY_SLOT_ACC_BODY,
+    IVY_SLOT_EXT_1,
+    IVY_SLOT_BOT,
+    IVY_SLOT_MID,
+    IVY_SLOT_ACC,
     IVY_SLOT_HAIR,
-    IVY_SLOT_ACC_HEAD,
-    IVY_SLOT_EXTRA_FLOAT,
 };
 
 static bool GetMovementInput(Vector2 *dir, IvyDirection *facing)
@@ -106,12 +101,12 @@ void Ivy_Player_BakeAtlas(IvyPlayer *restrict player, IvyAssetManager *restrict 
             const u8  eSlot  = BAKE_SLOT_ORDER[i];
             const u16 itemID = Ivy_Inventory_GetEquippedItemID(&player->inventory, eSlot);
 
-            if (itemID == 0) {
-                if (eSlot == IVY_SLOT_HAIR) {
-                    DrawTexture(player->graphics.baseHair, 0, 0, WHITE);
-                }
-                continue;
-            }
+            // if (itemID == 0) {
+            //     if (eSlot == IVY_SLOT_HAIR) {
+            //         DrawTexture(player->graphics.baseHair, 0, 0, WHITE);
+            //     }
+            //     continue;
+            // }
 
             const IvyItemVisual *vis = Ivy_ItemManager_GetVisual(itemMgr, itemID);
             if (!vis) continue;
@@ -119,6 +114,9 @@ void Ivy_Player_BakeAtlas(IvyPlayer *restrict player, IvyAssetManager *restrict 
             const Texture2D tex = Ivy_Gfx_LoadTextureDDS(assetManager, vis->spriteSheetID);
             DrawTexture(tex, 0, 0, WHITE);
         }
+
+        DrawTexture(player->graphics.baseHair, 0, 0, WHITE);
+
     EndTextureMode();
 
     player->graphics.atlasReady = true;
@@ -243,18 +241,40 @@ void Ivy_Player_Unload(IvyPlayer *player)
 {
     if (!player) return;
 
-    if (player->graphics.atlasReady) {
-        rlUnloadTexture(player->graphics.atlas.texture.id);
-        rlUnloadFramebuffer(player->graphics.atlas.id);
-        player->graphics.atlasReady = false;
+    // === FIX BANTAI MEMORY LEAK ATLAS PLAYER ===
+    // Jangan andalkan flag boolean (atlasReady), cek langsung handle ID OpenGL-nya!
+    if (player->graphics.atlas.texture.id > 0) {
+        // rlUnloadTexture(player->graphics.atlas.texture.id);
+        UnloadTexture(player->graphics.atlas.texture);
+        player->graphics.atlas.texture.id = 0;
     }
 
-    Ivy_Gfx_UnloadTexture(&player->graphics.baseBody);
-    Ivy_Gfx_UnloadTexture(&player->graphics.baseHead);
-    Ivy_Gfx_UnloadTexture(&player->graphics.baseHair);
+    if (player->graphics.atlas.id > 0) {
+        // rlUnloadFramebuffer(player->graphics.atlas.id);
+        UnloadTexture(player->graphics.atlas.texture);
+        player->graphics.atlas.id = 0;
+    }
+
+    player->graphics.atlasReady = false;
+
+    // === UNLOAD BASE BODY DAN HAIR ===
+    if (player->graphics.baseBody.id > 0) {
+        // rlUnloadTexture(player->graphics.baseBody.id);
+        UnloadTexture(player->graphics.baseBody);
+        player->graphics.baseBody.id = 0;
+    }
+
+    if (player->graphics.baseHair.id > 0) {
+        // rlUnloadTexture(player->graphics.baseHair.id);
+        UnloadTexture(player->graphics.baseHair);
+        player->graphics.baseHair.id = 0;
+    }
 
     for (int i = 0; i < 4; i++) {
-        Ivy_Audio_UnloadSound(&player->stepSound[i]);
+        if (player->stepSound[i].data.stream.buffer != NULL) {
+            Ivy_Audio_UnloadBuffer(player->stepSound[i].data.stream.buffer);
+            player->stepSound[i].data.stream.buffer = NULL;
+        }
     }
 }
 

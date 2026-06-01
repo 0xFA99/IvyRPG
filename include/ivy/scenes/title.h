@@ -20,22 +20,22 @@ typedef enum {
 } IvyTitleMenu;
 
 struct IvySceneTitleData {
+    Music       music;                      // 56
+    IvySound    sound;                      // 48
     const char *menuStrings[MENU_COUNT];    // 8 * 4 = 32
-    u32        menuLengths[MENU_COUNT];     // 4 * 4 = 16
-    Texture2D  background;                  // 20
-    float      cursorY;                     // 4
-    float      targetY;                     // 4
-    u32        selected;                    // 4
-    IvySound   sound;                       // 48
-    Music      music;                       // 56
-};                                          // 128
+    u32         menuLengths[MENU_COUNT];    // 4 * 4 = 16
+    float       cursorY;                    // 4
+    float       targetY;                    // 4
+    u32         selected;                   // 4
+    u32         padding;                    // 4
+};                                          // 168
 
 void Ivy_Scene_TitleInit(IvyGame *game);
 void Ivy_Scene_TitleUpdate(IvyGame *game);
 void Ivy_Scene_TitleDrawWorld(IvyGame *game);
 void Ivy_Scene_TitleDrawUI(IvyGame *game);
 void Ivy_Scene_TitleRebuildTextures(IvyGame *game);
-void Ivy_Scene_TitleUnload(IvySceneManager *sm);
+void Ivy_Scene_TitleUnload(IvySceneManager *sceneManager);
 
 #ifdef __cplusplus
 }

@@ -39,7 +39,12 @@ static void Ivy_SceneManager_Load(IvyGame *game, const IvySceneType nextType)
     if (IVY_LIKELY(game->scenes->actionScene && game->scenes->actionScene->table->Unload))
         game->scenes->actionScene->table->Unload(game->scenes);
 
+    __builtin_printf("[ARENA-DEBUG] Sebelum Restore (offset): %zu bytes\n", game->arena.offset);
+
     Ivy_Arena_LinearRestore(&game->arena, game->scenes->snapshot);
+
+    __builtin_printf("[ARENA-DEBUG] Sesudah Restore (offset): %zu bytes (Snapshot target: %zu)\n",
+           game->arena.offset, game->scenes->snapshot.offset);
 
     IvyScene *scene = Ivy_Arena_LinearAllocZero(&game->arena, sizeof(IvyScene));
     IVY_ENSURE(scene != NULL);

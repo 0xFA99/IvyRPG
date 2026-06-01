@@ -105,17 +105,24 @@ typedef enum {
 } IvyItemType;
 
 typedef enum {
-    IVY_SLOT_HAIR = 0,
-    IVY_SLOT_INNER_TOP,
-    IVY_SLOT_INNER_BOTTOM,
-    IVY_SLOT_OUTER_TOP,     // MID
-    IVY_SLOT_OUTER_BOTTOM,
-    IVY_SLOT_ARM_MAIN,
-    IVY_SLOT_ARM_SUB,
-    IVY_SLOT_ACC_HEAD,
-    IVY_SLOT_ACC_BODY,
-    IVY_SLOT_EXTRA_BACK,
-    IVY_SLOT_EXTRA_FLOAT,
+    IVY_SLOT_HEAD = 0,
+
+    IVY_SLOT_TOP_EXT,
+    IVY_SLOT_HAIR,
+    IVY_SLOT_ACC,
+
+    IVY_SLOT_TOP,
+    IVY_SLOT_MID,
+    IVY_SLOT_ACC_2,
+
+    IVY_SLOT_M_ARM,
+    IVY_SLOT_MID_EXT,
+    IVY_SLOT_S_ARM,
+
+    IVY_SLOT_EXT_1,
+    IVY_SLOT_BOT,
+    IVY_SLOT_EXT_2,
+
     IVY_SLOT_MAX
 } IvyEquipmentSlot;
 

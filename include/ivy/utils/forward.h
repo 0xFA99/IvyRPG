@@ -23,5 +23,6 @@ typedef struct IvySceneManager IvySceneManager;
 typedef struct IvySound IvySound;
 typedef struct IvyTilemap IvyTilemap;
 typedef struct IvyVirtualScreen IvyVirtualScreen;
+typedef struct IvyTextureManager IvyTextureManager;
 
 #endif

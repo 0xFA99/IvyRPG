@@ -27,13 +27,13 @@ struct IvyGame {
 
     const IvyKeybindInfo   *keybind;                    // 8
     IvyAssetManager        *assets;                     // 8
+    IvyTextureManager      *texManager;
     IvySceneManager        *scenes;                     // 8
     IvyVirtualScreen       *viewport;                   // 8
     IvySaveManager         *saveManager;                // 8
     IvyLocale              *locale;                     // 8
 
     Font                    fonts[IVY_FONT_MAX];        // 96
-    Texture2D               cursors[IVY_CURSOR_MAX];    // 40
 };                                                      // 216
 
 IvyGame Ivy_Game_Init(Vector2 size);
