@@ -1,6 +1,5 @@
 #include "ivy/arena/linear.h"
 #include "ivy/audio/buffer.h"
-#include "ivy/audio/ogg.h"
 #include "ivy/core/types.h"
 #include "ivy/graphics/collusion.h"
 #include "ivy/graphics/gfx.h"
@@ -46,7 +45,6 @@ IvyAudioBuffer *Ivy_Audio_LoadBuffer(IvyArenaLinear *arena, const int format, co
     buf->isSubBufferProcessed[1] = true;
     buf->sizeInFrames = sizeInFrames;
 
-    /* Thread-safe insert at tail */
     IvyAudioData *audioData = Ivy_Audio_GetAudioData();
     ma_mutex_lock(&audioData->System.lock);
     {
@@ -72,10 +70,10 @@ void Ivy_Audio_PlayAudioBuffer(IvyAudioBuffer *buffer)
 
     ma_mutex_lock(&data->System.lock);
     {
-        buffer->playing              = true;
-        buffer->paused               = false;
-        buffer->frameCursorPos       = 0;
-        buffer->framesProcessed      = 0;
+        buffer->playing                 = true;
+        buffer->paused                  = false;
+        buffer->frameCursorPos          = 0;
+        buffer->framesProcessed         = 0;
         buffer->isSubBufferProcessed[0] = true;
         buffer->isSubBufferProcessed[1] = true;
     }
@@ -88,10 +86,10 @@ void Ivy_Audio_StopAudioBuffer(IvyAudioBuffer *buffer)
 
     if (!buffer->playing || buffer->paused) return;
 
-    buffer->playing              = false;
-    buffer->paused               = false;
-    buffer->frameCursorPos       = 0;
-    buffer->framesProcessed      = 0;
+    buffer->playing                 = false;
+    buffer->paused                  = false;
+    buffer->frameCursorPos          = 0;
+    buffer->framesProcessed         = 0;
     buffer->isSubBufferProcessed[0] = true;
     buffer->isSubBufferProcessed[1] = true;
 }
@@ -104,7 +102,7 @@ void Ivy_Audio_StopAudioBufferSafe(IvyAudioBuffer *buffer)
     IVY_ENSURE(data != NULL);
 
     ma_mutex_lock(&data->System.lock);
-    Ivy_Audio_StopAudioBuffer(buffer);
+        Ivy_Audio_StopAudioBuffer(buffer);
     ma_mutex_unlock(&data->System.lock);
 }
 
@@ -130,4 +128,39 @@ void Ivy_Audio_UnloadBuffer(IvyAudioBuffer *buffer)
 
     ma_data_converter_uninit(&buffer->converter, NULL);
     /* Memory reclaimed by arena snapshot restore at call site */
+}
+
+void Ivy_Audio_ResetSystemBuffers(void)
+{
+    IvyAudioData *audioData = Ivy_Audio_GetAudioData();
+
+    ma_mutex_lock(&audioData->System.lock);
+    {
+        audioData->Buffer.first = NULL;
+        audioData->Buffer.last  = NULL;
+    }
+    ma_mutex_unlock(&audioData->System.lock);
+}
+
+void Ivy_Audio_InitPcmScratch(IvyArenaLinear *arena)
+{
+    IvyAudioData *audioData = Ivy_Audio_GetAudioData();
+    IVY_ENSURE(audioData != NULL);
+    IVY_ENSURE(audioData->System.isReady);
+
+    const ma_device *dev = &audioData->System.device;
+    const unsigned int bytesPerDeviceFrame = (unsigned int)ma_get_bytes_per_frame(
+        dev->playback.format,
+        dev->playback.channels
+    );
+
+    const unsigned int subBufferSize      = dev->sampleRate / 30 * bytesPerDeviceFrame;
+    const unsigned int periodSize         = dev->playback.internalPeriodSizeInFrames;
+    const unsigned int effectiveSubBuffer = (subBufferSize < periodSize) ? periodSize : subBufferSize;
+    const size_t scratchSize              = (size_t)(effectiveSubBuffer * 2) * bytesPerDeviceFrame;
+
+    audioData->System.pcmBuffer     = Ivy_Arena_LinearAllocZero(arena, scratchSize);
+    audioData->System.pcmBufferSize = scratchSize;
+
+    IVY_ENSURE(audioData->System.pcmBuffer != NULL);
 }

@@ -12,6 +12,7 @@
 #include "ivy/systems/texture_manager.h"
 #include "ivy/utils/file_ids.h"
 #include "ivy/utils/forward.h"
+#include "ivy/utils/utils.h"
 
 #include "raylib/raylib.h"
 #include "raylib/rlgl.h"
@@ -218,9 +219,9 @@ void Ivy_Player_Update(IvyPlayer *player, const float dt,
                 a->frameStep    = 1;
             }
 
-            if (a->currentFrame != oldFrame &&
-                (a->currentFrame == 0 || a->currentFrame == 2)) {
-                Ivy_Audio_PlayAudioBuffer(player->stepSound[GetRandomValue(0, 3)].data.stream.buffer);
+            if (a->currentFrame != oldFrame && (a->currentFrame == 0 || a->currentFrame == 2)) {
+                const u32 randomIdx = Ivy_Utils_RandomRange(0, 3);
+                Ivy_Audio_PlayAudioBuffer(player->stepSound[randomIdx].data.stream.buffer);
             }
         }
     } else {
@@ -272,7 +273,8 @@ void Ivy_Player_Unload(IvyPlayer *player)
 
     for (int i = 0; i < 4; i++) {
         if (player->stepSound[i].data.stream.buffer != NULL) {
-            Ivy_Audio_UnloadBuffer(player->stepSound[i].data.stream.buffer);
+            // Ivy_Audio_UnloadBuffer(player->stepSound[i].data.stream.buffer);
+            Ivy_Audio_UnloadSound(&player->stepSound[i]);
             player->stepSound[i].data.stream.buffer = NULL;
         }
     }

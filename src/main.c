@@ -11,7 +11,6 @@ int main(void)
     SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_MSAA_4X_HINT);
 
     InitWindow(DEFAULT_SCREEN_WIDTH, DEFAULT_SCREEN_HEIGHT, DEFAULT_SCREEN_TITLE);
-    InitAudioDevice();
 
     SetTargetFPS(DEFAULT_FPS);
     SetExitKey(0);
@@ -26,7 +25,6 @@ int main(void)
 
     Ivy_Game_Destroy(&game);
 
-    CloseAudioDevice();
     CloseWindow();
     return 0;
 }
