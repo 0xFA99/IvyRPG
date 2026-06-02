@@ -1,11 +1,12 @@
-#include "ivy/systems/scene_manager.h"
-
-#include "ivy/core/game.h"
 #include "ivy/arena/linear.h"
-#include "ivy/scenes/types.h"
-#include "ivy/scenes/title.h"
+#include "ivy/core/game.h"
+#include "ivy/core/types.h"
 #include "ivy/scenes/gameplay.h"
 #include "ivy/scenes/options.h"
+#include "ivy/scenes/title.h"
+#include "ivy/scenes/types.h"
+#include "ivy/systems/scene_manager.h"
+#include "ivy/utils/forward.h"
 
 static const IvySceneVTable scene_vtables[] = {
     [SCENE_TITLE] = {

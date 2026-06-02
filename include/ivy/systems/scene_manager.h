@@ -1,10 +1,11 @@
 #ifndef IVY_SYSTEM_SCENE_MANAGER_H
 #define IVY_SYSTEM_SCENE_MANAGER_H
 
-#include "ivy/core/types.h"
-#include "ivy/utils/forward.h"
 #include "ivy/arena/linear.h"
+#include "ivy/core/types.h"
 #include "ivy/scenes/types.h"
+#include "ivy/systems/scene_manager.h"
+#include "ivy/utils/forward.h"
 
 #include <stdbool.h>
 

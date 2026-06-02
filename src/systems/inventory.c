@@ -1,6 +1,7 @@
+#include "ivy/core/types.h"
 #include "ivy/systems/inventory.h"
 #include "ivy/systems/item_manager.h"
-#include "ivy/systems/scene_manager.h"
+#include "ivy/utils/forward.h"
 
 #include <string.h>
 

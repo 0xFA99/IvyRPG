@@ -1,9 +1,10 @@
 #ifndef IVY_SCENES_TITLE_H
 #define IVY_SCENES_TITLE_H
 
-#include "ivy/core/types.h"
-#include "ivy/utils/forward.h"
 #include "ivy/audio/wav.h"
+#include "ivy/core/types.h"
+#include "ivy/scenes/title.h"
+#include "ivy/utils/forward.h"
 
 #include "raylib/raylib.h"
 

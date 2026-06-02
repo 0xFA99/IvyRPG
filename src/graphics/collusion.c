@@ -1,9 +1,11 @@
-#include "ivy/graphics/collusion.h"
-#include "ivy/systems/asset_manager.h"
 #include "ivy/arena/linear.h"
-#include "ivy/graphics/gfx.h"
+#include "ivy/core/types.h"
 #include "ivy/entities/player.h"
+#include "ivy/graphics/collusion.h"
+#include "ivy/scenes/title.h"
+#include "ivy/systems/asset_manager.h"
 #include "ivy/utils/file_ids.h"
+#include "ivy/utils/forward.h"
 
 #ifdef IVY_DEBUG
 #include "raylib/external/glad.h"

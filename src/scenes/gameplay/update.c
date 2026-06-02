@@ -1,10 +1,17 @@
-#include "ivy/core/keybind.h"
-#include "ivy/core/game.h"
+#include "ivy/arena/types.h"
 #include "ivy/audio/buffer.h"
 #include "ivy/audio/ogg.h"
-#include "ivy/scenes/gameplay.h"
-#include "ivy/systems/scene_manager.h"
+#include "ivy/audio/wav.h"
+#include "ivy/core/game.h"
+#include "ivy/core/keybind.h"
+#include "ivy/core/types.h"
 #include "ivy/entities/player.h"
+#include "ivy/graphics/camera.h"
+#include "ivy/scenes/gameplay.h"
+#include "ivy/scenes/types.h"
+#include "ivy/systems/inventory.h"
+#include "ivy/systems/scene_manager.h"
+#include "ivy/utils/forward.h"
 
 static const i8 EQUIP_NAVIGATION[13][4] = {
     //      L   R    U   D
@@ -28,7 +35,7 @@ IVY_INLINE u8 EquipSlotToItemRow(const u8 equipSlot)
     return (equipSlot / 3) - 1;
 }
 
-static void GameplayInventory(const IvyGame *game)
+static void GameplayInventory(IvyGame *game)
 {
     IvySceneGameplayData *gameplayData = game->scenes->actionScene->data;
     IvyInventoryUI *ui = &gameplayData->inventoryUI;
@@ -60,14 +67,14 @@ static void GameplayInventory(const IvyGame *game)
             bool wasEquipped = false;
             for (usize s = 0; s < IVY_SLOT_MAX; s++) {
                 if (inventory->equipped.index[s] == bagIndex) {
-                    Ivy_Player_UnequipItem(gameplayData->player, game->assets, &gameplayData->itemManager, (u8)s);
+                    Ivy_Player_UnequipItem(game, gameplayData, (u8)s);
                     wasEquipped = true;
                     break;
                 }
             }
 
             if (!wasEquipped) {
-                Ivy_Player_EquipItem(gameplayData->player, game->assets, &gameplayData->itemManager, bagIndex);
+                Ivy_Player_EquipItem(game, gameplayData, bagIndex);
             }
 
             Ivy_Audio_PlayAudioBuffer(ui->sound[0].data.stream.buffer);
@@ -107,8 +114,7 @@ static void GameplayInventory(const IvyGame *game)
                 Ivy_Player_GetInventory(gameplayData->player), equipSlot
             );
             if (itemID != 0) {
-                Ivy_Player_UnequipItem(gameplayData->player, game->assets,
-                                       &gameplayData->itemManager, equipSlot);
+                Ivy_Player_UnequipItem(game, gameplayData, equipSlot);
                 Ivy_Audio_PlayAudioBuffer(ui->sound[0].data.stream.buffer);
             }
             return;

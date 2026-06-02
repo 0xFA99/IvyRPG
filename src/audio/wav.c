@@ -1,6 +1,11 @@
-#include "ivy/audio/wav.h"
+#include "ivy/arena/linear.h"
 #include "ivy/audio/buffer.h"
+#include "ivy/audio/wav.h"
+#include "ivy/core/game.h"
+#include "ivy/core/types.h"
 #include "ivy/systems/asset_manager.h"
+#include "ivy/systems/inventory.h"
+#include "ivy/utils/forward.h"
 
 #include "external/dr_wav.h"
 #include "external/miniaudio.h"

@@ -1,5 +1,8 @@
-#include "ivy/audio/stream.h"
 #include "ivy/audio/buffer.h"
+#include "ivy/audio/stream.h"
+#include "ivy/audio/wav.h"
+#include "ivy/systems/scene_manager.h"
+#include "ivy/utils/forward.h"
 
 #define STB_VORBIS_HEADER_ONLY
 #include "external/stb_vorbis.c"

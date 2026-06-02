@@ -2,7 +2,7 @@
 #define IVY_AUDIO_STREAM_H
 
 #include "ivy/core/types.h"
-#include "ivy/arena/linear.h"
+#include "ivy/utils/forward.h"
 
 #include "raylib/raylib.h"
 

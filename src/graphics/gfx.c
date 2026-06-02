@@ -1,6 +1,10 @@
+#include "ivy/arena/linear.h"
+#include "ivy/audio/buffer.h"
+#include "ivy/core/types.h"
+#include "ivy/core/virtual.h"
 #include "ivy/graphics/gfx.h"
 #include "ivy/systems/asset_manager.h"
-#include "ivy/utils/io.h"
+#include "ivy/utils/forward.h"
 
 #include "raylib/external/glad.h"
 

@@ -1,12 +1,12 @@
 #ifndef IVY_ARENA_LINEAR_H
 #define IVY_ARENA_LINEAR_H
 
-#include "ivy/core/types.h"
 #include "ivy/arena/types.h"
+#include "ivy/audio/buffer.h"
+#include "ivy/core/types.h"
 #include "ivy/utils/forward.h"
 
 #include <string.h>
-#include <stddef.h>
 #include <stdbool.h>
 
 #ifdef IVY_DEBUG

@@ -2,8 +2,8 @@
 #define IVY_SYSTEMS_TEXTURE_MANAGER_H
 
 #include "ivy/core/types.h"
-#include "ivy/utils/file_ids.h"
 #include "ivy/utils/forward.h"
+
 #include "raylib/raylib.h"
 
 #ifdef __cplusplus
@@ -17,6 +17,10 @@ typedef enum {
    IVY_TEX_CURSOR_1,
    IVY_TEX_CURSOR_2,
    IVY_TEX_ICONS_ATLAS,
+
+   IVY_TEX_PLAYER_BASE_BODY,
+   IVY_TEX_PLAYER_BASE_HEAD,
+   IVY_TEX_PLAYER_BASE_HAIR,
 
    IVY_TEX_COUNT
 } IvyTextureID;

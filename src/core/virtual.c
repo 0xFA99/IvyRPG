@@ -1,5 +1,9 @@
-#include "ivy/core/virtual.h"
 #include "ivy/arena/linear.h"
+#include "ivy/arena/types.h"
+#include "ivy/core/types.h"
+#include "ivy/core/virtual.h"
+#include "ivy/graphics/camera.h"
+#include "ivy/utils/forward.h"
 
 #include <math.h>
 

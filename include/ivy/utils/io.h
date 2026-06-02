@@ -2,6 +2,10 @@
 #define IVY_UTILS_IO_H
 
 #include "ivy/arena/linear.h"
+#include "ivy/core/types.h"
+#include "ivy/systems/asset_manager.h"
+#include "ivy/systems/profile_manager.h"
+#include "ivy/utils/forward.h"
 
 #include <stdio.h>
 

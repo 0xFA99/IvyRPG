@@ -1,14 +1,21 @@
+#include "ivy/arena/linear.h"
+#include "ivy/audio/buffer.h"
 #include "ivy/core/game.h"
 #include "ivy/core/keybind.h"
+#include "ivy/core/types.h"
+#include "ivy/core/virtual.h"
 #include "ivy/graphics/gfx.h"
 #include "ivy/scenes/options.h"
 #include "ivy/scenes/options_private.h"
-#include "ivy/systems/texture_manager.h"
-
-#include <stdio.h>
-
+#include "ivy/scenes/types.h"
+#include "ivy/systems/asset_manager.h"
 #include "ivy/systems/locale_manager.h"
 #include "ivy/systems/scene_manager.h"
+#include "ivy/systems/texture_manager.h"
+#include "ivy/utils/file_ids.h"
+#include "ivy/utils/forward.h"
+
+#include <stdio.h>
 
 #define OPTIONS_MAIN_MENU_TEXT_X      28.0f
 #define OPTIONS_MAIN_MENU_VALUE_X    108.0f

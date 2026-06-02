@@ -1,7 +1,11 @@
-#include "ivy/audio/ogg.h"
+#include "ivy/arena/linear.h"
 #include "ivy/audio/buffer.h"
+#include "ivy/audio/ogg.h"
 #include "ivy/audio/stream.h"
+#include "ivy/core/types.h"
+#include "ivy/scenes/types.h"
 #include "ivy/systems/asset_manager.h"
+#include "ivy/utils/forward.h"
 
 #define STB_VORBIS_HEADER_ONLY
 #include "external/stb_vorbis.c"

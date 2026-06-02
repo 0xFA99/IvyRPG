@@ -1,8 +1,10 @@
-#include "ivy/core/types.h"
-#include "ivy/systems/texture_manager.h"
-#include "ivy/graphics/gfx.h"
-#include "ivy/utils/file_ids.h"
 #include "ivy/arena/linear.h"
+#include "ivy/audio/buffer.h"
+#include "ivy/core/types.h"
+#include "ivy/graphics/gfx.h"
+#include "ivy/systems/texture_manager.h"
+#include "ivy/utils/file_ids.h"
+#include "ivy/utils/forward.h"
 
 #include "raylib/rlgl.h"
 
@@ -14,6 +16,10 @@ static IvyTextureID GetIndexFromHash(const u32 hash)
         case ASSET_TEXTURES_CURSOR_WHITE_DDS:   return IVY_TEX_CURSOR_1;
         case ASSET_TEXTURES_CURSOR_YELLOW_DDS:  return IVY_TEX_CURSOR_2;
         case ASSET_TEXTURES_ICONS_DDS:          return IVY_TEX_ICONS_ATLAS;
+
+        case ASSET_TEXTURES_SPRITESHEETS_BASE_BODY_DDS: return IVY_TEX_PLAYER_BASE_BODY;
+        case ASSET_TEXTURES_SPRITESHEETS_BASE_HEAD_DDS: return IVY_TEX_PLAYER_BASE_HEAD;
+        case ASSET_TEXTURES_SPRITESHEETS_BASE_HAIR_DDS: return IVY_TEX_PLAYER_BASE_HAIR;
         default:                                return IVY_TEX_NONE;
     }
 }
@@ -29,6 +35,10 @@ IvyTextureManager *Ivy_TextureManager_Init(IvyArenaLinear *restrict arena, IvyAs
     textureManager->textures[IVY_TEX_CURSOR_1]        = Ivy_Gfx_LoadTextureDDS(assetManager, ASSET_TEXTURES_CURSOR_WHITE_DDS);
     textureManager->textures[IVY_TEX_CURSOR_2]        = Ivy_Gfx_LoadTextureDDS(assetManager, ASSET_TEXTURES_CURSOR_YELLOW_DDS);
     textureManager->textures[IVY_TEX_ICONS_ATLAS]     = Ivy_Gfx_LoadTextureDDS(assetManager, ASSET_TEXTURES_ICONS_DDS);
+
+    textureManager->textures[IVY_TEX_PLAYER_BASE_BODY] = Ivy_Gfx_LoadTextureDDS(assetManager, ASSET_TEXTURES_SPRITESHEETS_BASE_BODY_DDS);
+    textureManager->textures[IVY_TEX_PLAYER_BASE_HEAD] = Ivy_Gfx_LoadTextureDDS(assetManager, ASSET_TEXTURES_SPRITESHEETS_BASE_HEAD_DDS);
+    textureManager->textures[IVY_TEX_PLAYER_BASE_HAIR] = Ivy_Gfx_LoadTextureDDS(assetManager, ASSET_TEXTURES_SPRITESHEETS_BASE_HAIR_DDS);
 
     return textureManager;
 }

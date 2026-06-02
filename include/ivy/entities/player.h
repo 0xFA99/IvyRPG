@@ -1,10 +1,11 @@
 #ifndef IVY_ENTITIES_PLAYER_H
 #define IVY_ENTITIES_PLAYER_H
 
-#include "ivy/core/types.h"
-#include "ivy/utils/forward.h"
-#include "ivy/systems/inventory.h"
 #include "ivy/audio/wav.h"
+#include "ivy/core/types.h"
+#include "ivy/scenes/options_private.h"
+#include "ivy/systems/inventory.h"
+#include "ivy/utils/forward.h"
 
 #include "raylib/raylib.h"
 
@@ -43,9 +44,6 @@ typedef struct {
 } IvyPlayerAnimation;       // 16
 
 typedef struct {
-    Texture2D       baseBody;    // 20
-    Texture2D       baseHead;    // 20
-    Texture2D       baseHair;    // 20
     RenderTexture2D atlas;       // 44
     IvyPlayerAction action;      //  4
     IvyDirection    direction;   //  4
@@ -66,9 +64,9 @@ void        Ivy_Player_Update(IvyPlayer *restrict player, float dt, const IvyCol
 void        Ivy_Player_Render(const IvyPlayer *player);
 void        Ivy_Player_Unload(IvyPlayer *player);
 
-void        Ivy_Player_BakeAtlas(IvyPlayer *restrict player, IvyAssetManager *restrict assetManager, const IvyItemManager *restrict itemMgr);
-void        Ivy_Player_EquipItem(IvyPlayer *restrict player, IvyAssetManager *restrict assetManager, const IvyItemManager *restrict itemMgr, u8 bagIndex);
-void        Ivy_Player_UnequipItem(IvyPlayer *restrict player, IvyAssetManager *restrict assetManager, const IvyItemManager *restrict itemMgr, u8 equipSlot);
+void        Ivy_Player_BakeAtlas(IvyGame *restrict game, IvySceneGameplayData *restrict gameplayData);
+void        Ivy_Player_EquipItem(IvyGame *game, IvySceneGameplayData *gameplayData, u8 bagIndex);
+void        Ivy_Player_UnequipItem(IvyGame *game, IvySceneGameplayData *gameplayData, u8 equipSlot);
 
 Vector2       Ivy_Player_GetPosition(const IvyPlayer *player);
 IvyInventory *Ivy_Player_GetInventory(IvyPlayer *player);

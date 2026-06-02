@@ -1,10 +1,10 @@
 #ifndef IVY_SCENES_OPTIONS_H
 #define IVY_SCENES_OPTIONS_H
 
-#include "ivy/core/types.h"
-#include "ivy/utils/forward.h"
 #include "ivy/audio/wav.h"
+#include "ivy/core/types.h"
 #include "ivy/scenes/options_private.h"
+#include "ivy/utils/forward.h"
 
 #ifdef __cplusplus
 extern "C" {
