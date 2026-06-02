@@ -1,14 +1,24 @@
+#include "ivy/arena/linear.h"
+#include "ivy/audio/buffer.h"
 #include "ivy/core/game.h"
+#include "ivy/core/types.h"
+#include "ivy/core/virtual.h"
 #include "ivy/entities/player.h"
+#include "ivy/graphics/camera.h"
 #include "ivy/graphics/collusion.h"
 #include "ivy/graphics/gfx.h"
 #include "ivy/graphics/tilemap.h"
 #include "ivy/scenes/gameplay.h"
+#include "ivy/scenes/types.h"
+#include "ivy/systems/asset_manager.h"
+#include "ivy/systems/inventory.h"
+#include "ivy/systems/item_manager.h"
 #include "ivy/systems/scene_manager.h"
+#include "ivy/systems/texture_manager.h"
+#include "ivy/utils/file_ids.h"
+#include "ivy/utils/forward.h"
 
 #include <stdio.h>
-
-#include "ivy/systems/texture_manager.h"
 
 enum {
     POPUP_WIDTH  = 200,
@@ -86,8 +96,8 @@ void Ivy_Scene_GameplayDrawWorld(IvyGame *game)
 
 void Ivy_Scene_GameplayRebuildTextures(IvyGame *game)
 {
-    const IvySceneGameplayData *gd = game->scenes->actionScene->data;
-    Ivy_Player_BakeAtlas(gd->player, game->assets, &gd->itemManager);
+    IvySceneGameplayData *gameplayData = game->scenes->actionScene->data;
+    Ivy_Player_BakeAtlas(game, gameplayData);
 }
 
 static void DrawMenuBackground(const IvyTextureManager *restrict texManager, const IvyVirtualScreen *restrict viewport)

@@ -1,23 +1,24 @@
-#include "ivy/scenes/gameplay.h"
-
-#include "ivy/core/types.h"
-#include "ivy/core/game.h"
-#include "ivy/core/keybind.h"
 #include "ivy/arena/linear.h"
+#include "ivy/arena/types.h"
 #include "ivy/audio/buffer.h"
 #include "ivy/audio/ogg.h"
 #include "ivy/audio/stream.h"
-#include "ivy/systems/scene_manager.h"
-#include "ivy/systems/locale_manager.h"
-#include "ivy/systems/inventory.h"
-#include "ivy/systems/profile_manager.h"
-#include "ivy/graphics/tilemap.h"
+#include "ivy/audio/wav.h"
+#include "ivy/core/game.h"
+#include "ivy/core/types.h"
+#include "ivy/entities/player.h"
+#include "ivy/graphics/camera.h"
 #include "ivy/graphics/collusion.h"
 #include "ivy/graphics/gfx.h"
-#include "ivy/entities/player.h"
+#include "ivy/graphics/tilemap.h"
+#include "ivy/scenes/gameplay.h"
+#include "ivy/scenes/types.h"
+#include "ivy/systems/inventory.h"
+#include "ivy/systems/item_manager.h"
+#include "ivy/systems/locale_manager.h"
+#include "ivy/systems/scene_manager.h"
 #include "ivy/utils/file_ids.h"
-
-#include <stdio.h>
+#include "ivy/utils/forward.h"
 
 #include "raylib/rlgl.h"
 
@@ -54,8 +55,8 @@ void Ivy_Scene_GameplayInit(IvyGame *game)
     Ivy_Inventory_AddItem(&gameplayData->player->inventory.bag, pantyAttr->id, pantyAttr->type, 2);
     Ivy_Inventory_AddItem(&gameplayData->player->inventory.bag, cloak->id, cloak->type, 2);
 
-    Ivy_Player_EquipItem(gameplayData->player, game->assets, &gameplayData->itemManager, 0);
-    Ivy_Player_EquipItem(gameplayData->player, game->assets, &gameplayData->itemManager, 1);
+    Ivy_Player_EquipItem(game, gameplayData, 0);
+    Ivy_Player_EquipItem(game, gameplayData, 1);
 
     gameplayData->inventoryUI.sound[0]        = Ivy_Audio_LoadSoundWav(&game->arena, game->assets, ASSET_AUDIO_EQUIP2_WAV);
     gameplayData->inventoryUI.sound[1]        = Ivy_Audio_LoadSoundWav(&game->arena, game->assets, ASSET_AUDIO_EQUIP3_WAV);

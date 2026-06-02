@@ -1,10 +1,12 @@
 #ifndef IVY_SCENES_GAMEPLAY_H
 #define IVY_SCENES_GAMEPLAY_H
 
-#include "ivy/utils/forward.h"
-#include "ivy/systems/item_manager.h"
-#include "ivy/graphics/camera.h"
 #include "ivy/audio/wav.h"
+#include "ivy/core/types.h"
+#include "ivy/graphics/camera.h"
+#include "ivy/graphics/tilemap.h"
+#include "ivy/systems/item_manager.h"
+#include "ivy/utils/forward.h"
 
 #define INVENTORY_SLOT_NONE 255
 #define EQUIP_DEFAULT_SLOT  3

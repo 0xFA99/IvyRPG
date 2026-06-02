@@ -2,7 +2,7 @@
 #define IVY_CORE_GAME_H
 
 #include "ivy/arena/linear.h"
-#include "ivy/core/virtual.h"
+#include "ivy/utils/forward.h"
 
 #include "raylib/raylib.h"
 

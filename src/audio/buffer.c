@@ -1,5 +1,11 @@
-#include "ivy/audio/buffer.h"
 #include "ivy/arena/linear.h"
+#include "ivy/audio/buffer.h"
+#include "ivy/audio/ogg.h"
+#include "ivy/core/types.h"
+#include "ivy/graphics/collusion.h"
+#include "ivy/graphics/gfx.h"
+#include "ivy/utils/forward.h"
+#include "ivy/utils/io.h"
 
 #include "external/miniaudio.h"
 

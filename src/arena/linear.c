@@ -1,8 +1,9 @@
-#include "ivy/core/types.h"
 #include "ivy/arena/linear.h"
+#include "ivy/arena/types.h"
+#include "ivy/core/types.h"
+#include "ivy/utils/forward.h"
 
 #include <stdlib.h>
-#include <string.h>
 
 void Ivy_Arena_LinearInit(IvyArenaLinear *arena, usize capacity)
 {

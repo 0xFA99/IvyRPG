@@ -1,15 +1,23 @@
-#include "ivy/entities/player.h"
-#include "ivy/systems/inventory.h"
-#include "ivy/systems/item_manager.h"
-
 #include "ivy/arena/linear.h"
 #include "ivy/audio/buffer.h"
-#include "ivy/graphics/gfx.h"
-#include "ivy/graphics/collusion.h"
 #include "ivy/audio/wav.h"
+#include "ivy/core/game.h"
+#include "ivy/core/types.h"
+#include "ivy/entities/player.h"
+#include "ivy/graphics/collusion.h"
+#include "ivy/graphics/gfx.h"
+#include "ivy/scenes/gameplay.h"
+#include "ivy/systems/inventory.h"
+#include "ivy/systems/item_manager.h"
+#include "ivy/systems/texture_manager.h"
 #include "ivy/utils/file_ids.h"
+#include "ivy/utils/forward.h"
 
+#include "raylib/raylib.h"
 #include "raylib/rlgl.h"
+
+#define PLAYER_SPRITESHEET_ATLAS_WIDTH  768
+#define PLAYER_SPRITESHEET_ATLAS_HEIGHT 512
 
 // Temporary Test
 static const u8 BAKE_SLOT_ORDER[] = {
@@ -64,9 +72,6 @@ IvyPlayer *Ivy_Player_Init(IvyArenaLinear *restrict arena, IvyAssetManager *rest
     p->movement.tilePosition = pos;
     p->movement.position     = (Vector2){ pos.x * IVY_TILE_SIZE, pos.y * IVY_TILE_SIZE };
 
-    p->graphics.baseBody   = Ivy_Gfx_LoadTextureDDS(mgr, ASSET_TEXTURES_SPRITESHEETS_BASE_BODY_DDS);
-    p->graphics.baseHead   = Ivy_Gfx_LoadTextureDDS(mgr, ASSET_TEXTURES_SPRITESHEETS_BASE_HEAD_DDS);
-    p->graphics.baseHair   = Ivy_Gfx_LoadTextureDDS(mgr, ASSET_TEXTURES_SPRITESHEETS_BASE_HAIR_DDS);
     p->graphics.direction  = IVY_DIRECTION_DOWN;
     p->graphics.atlasReady = false;
 
@@ -80,22 +85,27 @@ IvyPlayer *Ivy_Player_Init(IvyArenaLinear *restrict arena, IvyAssetManager *rest
     return p;
 }
 
-void Ivy_Player_BakeAtlas(IvyPlayer *restrict player, IvyAssetManager *restrict assetManager, const IvyItemManager *restrict itemMgr)
+void Ivy_Player_BakeAtlas(IvyGame *restrict game, IvySceneGameplayData *restrict gameplayData)
 {
+    IvyPlayer *player = gameplayData->player;
+    IvyAssetManager *assetManager = game->assets;
+    const IvyItemManager *itemManager = &gameplayData->itemManager;
+    const IvyTextureManager *textureManager = game->texManager;
+
     if (player->graphics.atlasReady) {
         rlUnloadTexture(player->graphics.atlas.texture.id);
         rlUnloadFramebuffer(player->graphics.atlas.id);
     }
 
     player->graphics.atlas = LoadRenderTexture(
-        player->graphics.baseBody.width,
-        player->graphics.baseBody.height
+        PLAYER_SPRITESHEET_ATLAS_WIDTH,
+        PLAYER_SPRITESHEET_ATLAS_HEIGHT
     );
 
     BeginTextureMode(player->graphics.atlas);
         ClearBackground(BLANK);
-        DrawTexture(player->graphics.baseBody, 0, 0, WHITE);
-        DrawTexture(player->graphics.baseHead, 0, 0, WHITE);
+        DrawTexture(Ivy_TextureManager_Get(textureManager, ASSET_TEXTURES_SPRITESHEETS_BASE_BODY_DDS), 0, 0, WHITE);
+        DrawTexture(Ivy_TextureManager_Get(textureManager, ASSET_TEXTURES_SPRITESHEETS_BASE_HEAD_DDS), 0, 0, WHITE);
 
         for (u32 i = 0; i < (u32)(sizeof(BAKE_SLOT_ORDER) / sizeof(BAKE_SLOT_ORDER[0])); i++) {
             const u8  eSlot  = BAKE_SLOT_ORDER[i];
@@ -108,37 +118,42 @@ void Ivy_Player_BakeAtlas(IvyPlayer *restrict player, IvyAssetManager *restrict 
             //     continue;
             // }
 
-            const IvyItemVisual *vis = Ivy_ItemManager_GetVisual(itemMgr, itemID);
+            const IvyItemVisual *vis = Ivy_ItemManager_GetVisual(itemManager, itemID);
             if (!vis) continue;
 
             const Texture2D tex = Ivy_Gfx_LoadTextureDDS(assetManager, vis->spriteSheetID);
             DrawTexture(tex, 0, 0, WHITE);
         }
 
-        DrawTexture(player->graphics.baseHair, 0, 0, WHITE);
+        DrawTexture(Ivy_TextureManager_Get(textureManager, ASSET_TEXTURES_SPRITESHEETS_BASE_HAIR_DDS), 0, 0, WHITE);
 
     EndTextureMode();
 
     player->graphics.atlasReady = true;
 }
 
-void Ivy_Player_EquipItem(IvyPlayer *restrict player, IvyAssetManager *restrict assetManager, const IvyItemManager *restrict itemMgr, const u8 bagIndex)
+void Ivy_Player_EquipItem(IvyGame *game, IvySceneGameplayData *gameplayData, const u8 bagIndex)
 {
+    IvyPlayer *player = gameplayData->player;
+    const IvyItemManager *itemManager = &gameplayData->itemManager;
     const IvyInventoryBag *bag = &player->inventory.bag;
+
     if (bagIndex >= bag->count) return;
 
     const u16 itemID = bag->slot[bagIndex].itemID;
-    const IvyItemAttribute *attr = Ivy_ItemManager_GetAttribute(itemMgr, itemID);
+    const IvyItemAttribute *attr = Ivy_ItemManager_GetAttribute(itemManager, itemID);
     if (!attr) return;
 
     Ivy_Inventory_Equip(&player->inventory, bagIndex, attr->slot);
-    Ivy_Player_BakeAtlas(player, assetManager, itemMgr);
+    Ivy_Player_BakeAtlas(game, gameplayData);
 }
 
-void Ivy_Player_UnequipItem(IvyPlayer *restrict player, IvyAssetManager *restrict assetManager, const IvyItemManager *restrict itemMgr, const u8 equipSlot)
+void Ivy_Player_UnequipItem(IvyGame *game, IvySceneGameplayData *gameplayData, const u8 equipSlot)
 {
+    IvyPlayer *player = gameplayData->player;
     Ivy_Inventory_Unequip(&player->inventory, equipSlot);
-    Ivy_Player_BakeAtlas(player, assetManager, itemMgr);
+    // Ivy_Player_BakeAtlas(player, assetManager, itemMgr);
+    Ivy_Player_BakeAtlas(game, gameplayData);
 }
 
 void Ivy_Player_Update(IvyPlayer *player, const float dt,
@@ -241,8 +256,6 @@ void Ivy_Player_Unload(IvyPlayer *player)
 {
     if (!player) return;
 
-    // === FIX BANTAI MEMORY LEAK ATLAS PLAYER ===
-    // Jangan andalkan flag boolean (atlasReady), cek langsung handle ID OpenGL-nya!
     if (player->graphics.atlas.texture.id > 0) {
         // rlUnloadTexture(player->graphics.atlas.texture.id);
         UnloadTexture(player->graphics.atlas.texture);
@@ -256,19 +269,6 @@ void Ivy_Player_Unload(IvyPlayer *player)
     }
 
     player->graphics.atlasReady = false;
-
-    // === UNLOAD BASE BODY DAN HAIR ===
-    if (player->graphics.baseBody.id > 0) {
-        // rlUnloadTexture(player->graphics.baseBody.id);
-        UnloadTexture(player->graphics.baseBody);
-        player->graphics.baseBody.id = 0;
-    }
-
-    if (player->graphics.baseHair.id > 0) {
-        // rlUnloadTexture(player->graphics.baseHair.id);
-        UnloadTexture(player->graphics.baseHair);
-        player->graphics.baseHair.id = 0;
-    }
 
     for (int i = 0; i < 4; i++) {
         if (player->stepSound[i].data.stream.buffer != NULL) {

@@ -1,11 +1,16 @@
 #include "ivy/audio/buffer.h"
+#include "ivy/audio/wav.h"
 #include "ivy/core/game.h"
 #include "ivy/core/keybind.h"
+#include "ivy/core/types.h"
+#include "ivy/core/virtual.h"
 #include "ivy/scenes/options.h"
 #include "ivy/scenes/options_private.h"
+#include "ivy/scenes/types.h"
 #include "ivy/systems/locale_manager.h"
 #include "ivy/systems/profile_manager.h"
 #include "ivy/systems/scene_manager.h"
+#include "ivy/utils/forward.h"
 
 #define OPTIONS_SCREEN_SIZE_MAX 5
 #define OPTIONS_KEYBIND_VISIBLE 8

@@ -1,7 +1,10 @@
 #ifndef IVY_SCENES_TYPES_H
 #define IVY_SCENES_TYPES_H
 
+#include "ivy/arena/types.h"
+#include "ivy/core/game.h"
 #include "ivy/core/types.h"
+#include "ivy/scenes/types.h"
 #include "ivy/utils/forward.h"
 
 #include <stdbool.h>

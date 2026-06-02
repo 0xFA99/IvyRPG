@@ -3,11 +3,8 @@
 
 #include "ivy/core/types.h"
 #include "ivy/core/virtual.h"
+#include "ivy/scenes/types.h"
 #include "ivy/utils/forward.h"
-
-#ifdef _WIN32
-    #include <stddef.h>
-#endif
 
 #include "raylib/raylib.h"
 

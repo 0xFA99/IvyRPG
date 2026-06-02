@@ -1,9 +1,13 @@
-#include "ivy/core/game.h"
 #include "ivy/arena/linear.h"
 #include "ivy/audio/wav.h"
-#include "ivy/systems/scene_manager.h"
+#include "ivy/core/game.h"
+#include "ivy/core/types.h"
 #include "ivy/scenes/options.h"
+#include "ivy/scenes/options_private.h"
+#include "ivy/scenes/types.h"
+#include "ivy/systems/scene_manager.h"
 #include "ivy/utils/file_ids.h"
+#include "ivy/utils/forward.h"
 
 void Ivy_Scene_OptionsInit(IvyGame *game)
 {

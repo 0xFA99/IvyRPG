@@ -1,6 +1,7 @@
 #ifndef IVY_GRAPHICS_CAMERA_H
 #define IVY_GRAPHICS_CAMERA_H
 
+#include "ivy/graphics/camera.h"
 #include "ivy/utils/forward.h"
 
 #include "raylib/raylib.h"

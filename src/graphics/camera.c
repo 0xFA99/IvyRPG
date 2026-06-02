@@ -1,7 +1,8 @@
-#include "ivy/graphics/camera.h"
-
+#include "ivy/core/types.h"
 #include "ivy/core/virtual.h"
-#include "ivy/entities/player.h"
+#include "ivy/graphics/camera.h"
+#include "ivy/graphics/tilemap.h"
+#include "ivy/utils/forward.h"
 
 IvyCamera Ivy_Camera_Init(void)
 {

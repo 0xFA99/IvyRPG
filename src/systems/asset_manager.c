@@ -1,6 +1,10 @@
+#include "ivy/arena/linear.h"
+#include "ivy/arena/types.h"
 #include "ivy/core/types.h"
 #include "ivy/systems/asset_manager.h"
-#include "ivy/arena/linear.h"
+#include "ivy/systems/profile_manager.h"
+#include "ivy/utils/forward.h"
+#include "ivy/utils/io.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -162,11 +166,7 @@ IvyAssetManager* Ivy_AssetManager_Init(IvyArenaLinear *restrict arena, const cha
     mgr->table = (IvyAssetEntry*)Ivy_Arena_LinearAlloc(arena, sizeof(IvyAssetEntry) * header.table_size);
     if (IVY_UNLIKELY(!mgr->table)) {
         IVY_ASSERT(false, "[AssetManager] Arena OOM for table size %u", header.table_size);
-
-        // Unreachable codes
-        // fclose(f_header);
-        // Ivy_Arena_LinearRestore(arena, snapshot);
-        // return NULL;
+        IVY_UNREACHABLE;
     }
 
     mgr->table_mask = header.table_size - 1;
@@ -176,17 +176,13 @@ IvyAssetManager* Ivy_AssetManager_Init(IvyArenaLinear *restrict arena, const cha
 
     if (IVY_UNLIKELY(entries_read != header.table_size)) {
         IVY_CHECK(false, "[AssetManager] Table entry mismatch (read %zu/%u)", entries_read, header.table_size);
-        // Unreachable codes
-        // Ivy_Arena_LinearRestore(arena, snapshot);
-        // return NULL;
+        IVY_UNREACHABLE;
     }
 
     const bool map_ok = Ivy_MapDataFile(mgr, data_path);
     if (IVY_UNLIKELY(!map_ok)) {
         IVY_CHECK(false, "[AssetManager] Failed to map data file: %s", data_path);
-        // Unreachable codes
-        // Ivy_Arena_LinearRestore(arena, snapshot);
-        // return NULL;
+        IVY_UNREACHABLE;
     }
 
     return mgr;
