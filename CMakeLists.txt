@@ -111,7 +111,8 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
             src/audio/buffer.c
             src/audio/stream.c
             src/audio/wav.c
-            src/audio/ogg.c)
+            src/audio/ogg.c
+            src/audio/device.c)
 
     ivy_module(core
             src/core/game.c
@@ -145,11 +146,14 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     ivy_module(entities
             src/entities/player.c)
 
+    ivy_module(utils
+            src/utils/utils.c)
+
     add_executable(${PROJECT_NAME} src/main.c)
 
     target_link_libraries(${PROJECT_NAME} PRIVATE
             -Wl,--start-group
-            ivy_arena ivy_audio ivy_core ivy_graphics ivy_systems ivy_scenes ivy_entities
+            ivy_utils ivy_arena ivy_audio ivy_core ivy_graphics ivy_systems ivy_scenes ivy_entities
             -Wl,--end-group
             raylib
     )

@@ -13,12 +13,14 @@
 extern "C" {
 #endif
 
-#define AUDIO_DEVICE_FORMAT       ma_format_f32
-#define AUDIO_DEVICE_CHANNELS     2
-#define AUDIO_SAMPLE_RATE         44100
-#define AUDIO_BUFFER_RESIDUAL_CAP 8
-#define AUDIO_BUFFER_USAGE_STATIC 0
-#define AUDIO_BUFFER_USAGE_STREAM 1
+#define AUDIO_DEVICE_FORMAT         ma_format_f32
+#define AUDIO_DEVICE_CHANNELS       2
+#define AUDIO_SAMPLE_RATE           44100
+#define AUDIO_BUFFER_RESIDUAL_CAP   8
+#define AUDIO_BUFFER_USAGE_STATIC   0
+#define AUDIO_BUFFER_USAGE_STREAM   1
+
+#define AUDIO_PCM_SCRATCH_MAX_FRAMES (AUDIO_SAMPLE_RATE / 30)
 
 struct IvyAudioBuffer {
     ma_data_converter converter;
@@ -67,8 +69,13 @@ typedef struct {
 
 IvyAudioBuffer *Ivy_Audio_LoadBuffer(IvyArenaLinear *arena, int format, u32 channels, u32 sampleRate, u32 sizeInFrames, int usage);
 void            Ivy_Audio_PlayAudioBuffer(IvyAudioBuffer *buffer);
+
 void            Ivy_Audio_StopAudioBuffer(IvyAudioBuffer *buffer);
+void            Ivy_Audio_StopAudioBufferSafe(IvyAudioBuffer *buffer);
 void            Ivy_Audio_UnloadBuffer(IvyAudioBuffer *buffer);
+void            Ivy_Audio_ResetSystemBuffers(void);
+
+void            Ivy_Audio_InitPcmScratch(IvyArenaLinear *arena);
 
 #ifdef __cplusplus
 }

@@ -1,11 +1,11 @@
 #include "ivy/arena/linear.h"
 #include "ivy/core/game.h"
+
+#include "ivy/audio/device.h"
 #include "ivy/core/keybind.h"
 #include "ivy/core/types.h"
 #include "ivy/core/virtual.h"
-#include "ivy/entities/player.h"
 #include "ivy/graphics/gfx.h"
-#include "ivy/scenes/options_private.h"
 #include "ivy/scenes/types.h"
 #include "ivy/systems/asset_manager.h"
 #include "ivy/systems/locale_manager.h"
@@ -23,8 +23,10 @@ IvyGame Ivy_Game_Init(const Vector2 size)
 {
     IvyGame game = {0};
 
+    Ivy_Audio_InitDevice();
+
     // Arena
-    Ivy_Arena_LinearInit(&game.arena, 1560288);
+    Ivy_Arena_LinearInit(&game.arena, 1765072);
 
     // Save Manager
     game.saveManager = Ivy_SaveManager_Init(&game.arena, IVY_SAVE_PATH);
@@ -50,6 +52,8 @@ IvyGame Ivy_Game_Init(const Vector2 size)
     // Keybind
     game.keybind = Ivy_Keybind_GetKeybindInfo();
     Ivy_Keybind_Load(game.saveManager);
+
+    Ivy_Audio_InitPcmScratch(&game.arena);
 
     // Scene Manager
     game.scenes = Ivy_SceneManager_Init(&game, game.assets);
@@ -105,6 +109,8 @@ void Ivy_Game_Destroy(IvyGame *game)
     Ivy_VirtualScreen_Unload(game->viewport);
 
     Ivy_TextureManager_Destroy(game->texManager);
+
+    Ivy_Audio_CloseDevice();
 
     Ivy_Arena_LinearDestroy(&game->arena);
 }
