@@ -182,6 +182,9 @@ IvyTilemap *Ivy_Tilemap_LoadMap(IvyAssetManager *restrict manager, IvyArenaLinea
     tilemap->tilesetTex = Ivy_Gfx_LoadTextureDDS(manager, header.file_id);
     SetTextureFilter(tilemap->tilesetTex, TEXTURE_FILTER_POINT);
 
+    tilemap->mapWidth = header.mapWidth;
+    tilemap->mapHeight = header.mapHeight;
+
     const IvyArenaLinearSnapshot snap = Ivy_Arena_LinearGetSnapshot(arena);
 
     // Load commands
@@ -229,6 +232,12 @@ void Ivy_Tilemap_Render(const IvyTilemap *tilemap)
     rlDisableVertexArray();
 
     rlDisableTexture();
+}
+
+Vector2 Ivy_Tilemap_GetDimensions(const IvyTilemap *tilemap)
+{
+    if (!tilemap) return (Vector2){ 0.0f, 0.0f };
+    return (Vector2){ tilemap->mapWidth, tilemap->mapHeight };
 }
 
 void Ivy_Tilemap_Unload(const IvyTilemap *tilemap)

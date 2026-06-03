@@ -1,7 +1,6 @@
+#include "ivy/audio/device.h"
 #include "ivy/arena/linear.h"
 #include "ivy/core/game.h"
-
-#include "ivy/audio/device.h"
 #include "ivy/core/keybind.h"
 #include "ivy/core/types.h"
 #include "ivy/core/virtual.h"
@@ -26,7 +25,7 @@ IvyGame Ivy_Game_Init(const Vector2 size)
     Ivy_Audio_InitDevice();
 
     // Arena
-    Ivy_Arena_LinearInit(&game.arena, 1765072);
+    Ivy_Arena_LinearInit(&game.arena, 1765088);
 
     // Save Manager
     game.saveManager = Ivy_SaveManager_Init(&game.arena, IVY_SAVE_PATH);

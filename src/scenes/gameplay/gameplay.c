@@ -1,5 +1,4 @@
 #include "ivy/arena/linear.h"
-#include "ivy/arena/types.h"
 #include "ivy/audio/buffer.h"
 #include "ivy/audio/ogg.h"
 #include "ivy/audio/stream.h"
@@ -95,6 +94,9 @@ void Ivy_Scene_GameplayUnload(IvySceneManager *sm)
 
     Ivy_Audio_UnloadSound(&gd->menu.sound);
     Ivy_Audio_UnloadStream(&gd->music);
+
+    Ivy_Audio_UnloadSound(&gd->inventoryUI.sound[0]);
+    Ivy_Audio_UnloadSound(&gd->inventoryUI.sound[1]);
 
     sm->actionScene->data = NULL;
 }

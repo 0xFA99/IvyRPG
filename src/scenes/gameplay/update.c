@@ -203,6 +203,9 @@ void Ivy_Scene_GameplayUpdate(IvyGame *game)
         return;
     }
 
-    Ivy_Player_Update(gameplayData->player, GetFrameTime(), gameplayData->collusionMap);
-    Ivy_Camera_Update(&gameplayData->camera, Ivy_Player_GetPosition(gameplayData->player));
+    Ivy_Player_Update(gameplayData->player, gameplayData->collusionMap, GetFrameTime());
+
+    const Vector2 playerPosition = Ivy_Player_GetPosition(gameplayData->player);
+    const Vector2 mapSize = Ivy_Tilemap_GetDimensions(gameplayData->tilemap);
+    Ivy_Camera_Update(&gameplayData->camera, playerPosition, mapSize.x * IVY_TILE_SIZE, mapSize.y * IVY_TILE_SIZE);
 }

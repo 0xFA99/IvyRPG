@@ -102,7 +102,7 @@ void Ivy_Scene_GameplayRebuildTextures(IvyGame *game)
 
 static void DrawMenuBackground(const IvyTextureManager *restrict texManager, const IvyVirtualScreen *restrict viewport)
 {
-    DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), (Color){ 0, 0, 0, 180 });
+    DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), (Color){ 0, 0, 0, 255 });
 
     const Texture2D background = Ivy_TextureManager_Get(texManager, ASSET_TEXTURES_BACKGROUND_DDS);
 

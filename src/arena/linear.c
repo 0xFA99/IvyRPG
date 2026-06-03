@@ -4,7 +4,6 @@
 #include "ivy/utils/forward.h"
 
 #include <stdbool.h>
-#include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
 
