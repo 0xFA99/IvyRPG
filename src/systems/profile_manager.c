@@ -1,17 +1,14 @@
-#define _GNU_SOURCE
-#define _POSIX_C_SOURCE 200809L
-
 #include "ivy/arena/linear.h"
-#include "ivy/audio/buffer.h"
 #include "ivy/core/types.h"
-#include "ivy/systems/asset_manager.h"
 #include "ivy/systems/profile_manager.h"
 #include "ivy/utils/file_ids.h"
 #include "ivy/utils/forward.h"
-#include "ivy/utils/io.h"
 
-#include <string.h>
+#include "raylib/raylib.h"
+
 #include <stdbool.h>
+#include <stddef.h>
+#include <string.h>
 
 #ifdef _WIN32
     #ifndef WIN32_LEAN_AND_MEAN
@@ -19,6 +16,7 @@
     #endif
     #include <windows.h>
 #else
+    #include <sys/types.h>
     #include <sys/mman.h>
     #include <sys/stat.h>
     #include <fcntl.h>
@@ -107,6 +105,8 @@ bool Ivy_SaveManager_Flush(const IvySaveManager *mgr)
 }
 
 #else
+
+extern int ftruncate(int fd, off_t length);
 
 static void Ivy_SaveClose(IvySaveManager *mgr)
 {

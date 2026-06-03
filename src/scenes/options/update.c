@@ -12,6 +12,10 @@
 #include "ivy/systems/scene_manager.h"
 #include "ivy/utils/forward.h"
 
+#include "raylib/raylib.h"
+
+#include <stdbool.h>
+
 #define OPTIONS_SCREEN_SIZE_MAX 5
 #define OPTIONS_KEYBIND_VISIBLE 8
 
@@ -54,7 +58,7 @@ static void _ivyOptions_ApplyResolution(const IvyGame *game, const u32 index)
     game->scenes->actionScene->needsRebuild = true;
 }
 
-void _ivyOptions_ReloadLocales(IvySceneOptionsData *restrict od, const IvyLocale *restrict locale)
+void _ivyOptions_ReloadLocales(IvySceneOptionsData *restrict optionsData, const IvyLocale *restrict locale)
 {
     static const _IvyOptionsLocaleIndexKey KEYS[OPTIONS_LOCALE_COUNT] = {
         [OPTIONS_LOCALE_SCREEN_SIZE] = OPTIONS_LOCALE_INDEX_SCREEN_SIZE_KEY,
@@ -65,8 +69,8 @@ void _ivyOptions_ReloadLocales(IvySceneOptionsData *restrict od, const IvyLocale
     };
 
     for (u32 i = 0; i < OPTIONS_LOCALE_COUNT; i++) {
-        od->locale.strings[i] = IVY_TR(locale, (IvyLocaleKey)KEYS[i]);
-        od->locale.lengths[i] = IVY_TR_LEN(locale, (IvyLocaleKey)KEYS[i]);
+        optionsData->locale.strings[i] = IVY_TR(locale, (IvyLocaleKey)KEYS[i]);
+        optionsData->locale.lengths[i] = IVY_TR_LEN(locale, (IvyLocaleKey)KEYS[i]);
     }
 }
 

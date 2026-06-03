@@ -1,12 +1,15 @@
 #include "ivy/audio/buffer.h"
 #include "ivy/audio/stream.h"
-#include "ivy/audio/wav.h"
-#include "ivy/systems/scene_manager.h"
 #include "ivy/utils/forward.h"
 #include "ivy/core/types.h"
 
 #define STB_VORBIS_HEADER_ONLY
 #include "external/stb_vorbis.c"
+#include "external/miniaudio.h"
+
+#include "raylib/raylib.h"
+
+#include <stdbool.h>
 
 AudioStream Ivy_Audio_LoadStream(IvyArenaLinear *arena, const u32 sampleRate,
                                  const u32 sampleSize, const u32 channels)

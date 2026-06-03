@@ -90,7 +90,10 @@ void Ivy_Game_Draw(IvyGame *game)
 
     BeginDrawing();
         ClearBackground(BLACK);
-        Ivy_VirtualScreen_Draw(game->viewport);
+        BeginBlendMode(BLEND_ALPHA_PREMULTIPLY);
+            Ivy_VirtualScreen_Draw(game->viewport);
+        EndBlendMode();
+
         game->scenes->actionScene->table->DrawUI(game);
         DrawFPS(10, 10);
     EndDrawing();

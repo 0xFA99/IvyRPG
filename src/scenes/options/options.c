@@ -9,6 +9,9 @@
 #include "ivy/utils/file_ids.h"
 #include "ivy/utils/forward.h"
 
+
+extern void _ivyOptions_ReloadLocales(IvySceneOptionsData *restrict optionsData, const IvyLocale *restrict locale);
+
 void Ivy_Scene_OptionsInit(IvyGame *game)
 {
     IvySceneOptionsData *optionsData = Ivy_Arena_LinearAllocZero(&game->arena, sizeof(IvySceneOptionsData));

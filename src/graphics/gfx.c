@@ -69,12 +69,19 @@ Texture2D Ivy_Gfx_LoadTextureDDS(IvyAssetManager *mgr, const u32 id)
     glBindTexture(GL_TEXTURE_2D, texId);
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
-    u32 width, height;
+    u32 width, height, linearSize;
+
     memcpy(&width, data + 4 + offsetof(dds_header, width), sizeof(u32));
     memcpy(&height, data + 4 + offsetof(dds_header, height), sizeof(u32));
+    memcpy(&linearSize, data + 4 + offsetof(dds_header, pitch_or_linear_size), sizeof(u32));
 
-    // DXT5, width * height (1 byte per 4x4 block)
-    glCompressedTexImage2D(GL_TEXTURE_2D, 0, GL_COMPRESSED_RGBA_S3TC_DXT5_EXT, (int)width, (int)height, 0, (int)(width * height), pixelData);
+    if (linearSize == 0) {
+        linearSize = ((width + 3) / 4) * ((height + 3) / 4) * 16;
+    }
+
+    glCompressedTexImage2D(GL_TEXTURE_2D, 0, GL_COMPRESSED_RGBA_S3TC_DXT5_EXT,
+                           (int)width, (int)height, 0, (int)linearSize, pixelData);
+
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);

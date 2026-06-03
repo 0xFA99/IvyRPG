@@ -166,8 +166,8 @@ static u32 ReadAudioBufferFramesInMixingFormat(IvyAudioBuffer *restrict audioBuf
 
         if (audioBuffer->converterResidualCount > 0)
         {
-            u64 inputFramesProcessed  = audioBuffer->converterResidualCount;
-            u64 outputFramesProcessed = outputFramesToProcessThisIteration;
+            ma_uint64 inputFramesProcessed  = audioBuffer->converterResidualCount;
+            ma_uint64 outputFramesProcessed = outputFramesToProcessThisIteration;
 
             ma_data_converter_process_pcm_frames(&audioBuffer->converter, audioBuffer->converterResidual, &inputFramesProcessed, runningFramesOut, &outputFramesProcessed);
 
@@ -191,8 +191,8 @@ static u32 ReadAudioBufferFramesInMixingFormat(IvyAudioBuffer *restrict audioBuf
 
             const u32 inputFramesInInternalFormatCount = ReadAudioBufferFramesInInternalFormat(audioBuffer, inputBuffer, estimatedInputFrameCount);
 
-            u64 inputFramesProcessed  = inputFramesInInternalFormatCount;
-            u64 outputFramesProcessed = outputFramesToProcessThisIteration;
+            ma_uint64 inputFramesProcessed  = inputFramesInInternalFormatCount;
+            ma_uint64 outputFramesProcessed = outputFramesToProcessThisIteration;
 
             ma_data_converter_process_pcm_frames(&audioBuffer->converter, inputBuffer, &inputFramesProcessed, runningFramesOut, &outputFramesProcessed);
 
@@ -332,7 +332,6 @@ void Ivy_Audio_CloseDevice(void)
 
     if (!audioData->System.isReady) return;
 
-    // Supaya aman dari race-condition di callback terakhir, uninit device dulu baru mutex
     ma_device_uninit(&audioData->System.device);
     ma_mutex_uninit(&audioData->System.lock);
     ma_context_uninit(&audioData->System.context);

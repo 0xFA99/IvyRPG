@@ -3,7 +3,10 @@
 #include "ivy/core/types.h"
 #include "ivy/utils/forward.h"
 
+#include <stdbool.h>
+#include <stddef.h>
 #include <stdlib.h>
+#include <string.h>
 
 void Ivy_Arena_LinearInit(IvyArenaLinear *arena, usize capacity)
 {
