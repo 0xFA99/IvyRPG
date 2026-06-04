@@ -3,6 +3,7 @@
 
 #include "ivy/audio/wav.h"
 #include "ivy/core/types.h"
+#include "ivy/entities/door.h"
 #include "ivy/scenes/options_private.h"
 #include "ivy/systems/inventory.h"
 #include "ivy/utils/forward.h"
@@ -64,7 +65,7 @@ struct IvyPlayer {
 };                                      // 664
 
 IvyPlayer      *Ivy_Player_Init(IvyArenaLinear *restrict arena, IvyAssetManager *restrict assetManager, Vector2 position);
-void            Ivy_Player_Update(IvyPlayer *restrict player, const IvyCollusionMap *restrict collisionMap, float deltaTime);
+void            Ivy_Player_Update(IvyPlayer *restrict player, const IvyCollusionMap *restrict collisionMap, IvyDoor *restrict doors, float deltaTime);
 void            Ivy_Player_Render(const IvyPlayer *player);
 void            Ivy_Player_Unload(IvyPlayer *player);
 

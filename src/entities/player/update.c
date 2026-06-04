@@ -117,7 +117,7 @@ static void Ivy_Player_Attack(IvyPlayer *player)
     player->graphics.action             = PLAYER_ACTION_ATTACK;
 }
 
-void Ivy_Player_Update(IvyPlayer *restrict player, const IvyCollusionMap *restrict collisionMap, const float deltaTime)
+void Ivy_Player_Update(IvyPlayer *restrict player, const IvyCollusionMap *restrict collisionMap, IvyDoor *restrict doors, const float deltaTime)
 {
     IvyPlayerMovement *movement = &player->movement;
     IvyPlayerAnimation *animation = &player->animation;
@@ -156,13 +156,29 @@ void Ivy_Player_Update(IvyPlayer *restrict player, const IvyCollusionMap *restri
                         .y = movement->tilePosition.y + input.y
                     };
 
-                    const bool isSolid = collisionMap && Ivy_Collusion_IsTileSolid(collisionMap, (int)candidate.x, (int)candidate.y);
+                    bool isSolid = collisionMap && Ivy_Collusion_IsTileSolid(collisionMap, (int)candidate.x, (int)candidate.y);
+                    if (!isSolid && doors != NULL) {
+                        if (Ivy_Door_IsSolid(doors)) {
+                            int doorX, doorY, doorW, doorH;
+                            Ivy_Door_GetTileRect(doors, &doorX, &doorY, &doorW, &doorH);
+
+                            int collisionTileY = doorY + 1;
+                            int collisionTileH = 1; // Tinggi collision pintu sekarang hanya 1 tile
+                            if ((int)candidate.x >= doorX && (int)candidate.x < doorX + doorW &&
+             (int)candidate.y >= collisionTileY && (int)candidate.y < collisionTileY + collisionTileH) {
+                                isSolid = true;
+             }
+                        }
+                    }
+
                     if (!isSolid) {
-                        movement->targetTile = candidate;
                         movement->isMoving = true;
                         movement->moveTimer = 0.0f;
-                        movement->justTurned = false;
-                        player->graphics.action = PLAYER_ACTION_WALK;
+                        movement->targetTile = candidate;
+                        player->graphics.action = PLAYER_ACTION_WALK; // Sesuaikan dengan enum kamu
+                    }
+                    else {
+                        player->graphics.action = PLAYER_ACTION_IDLE;
                     }
                 }
             }

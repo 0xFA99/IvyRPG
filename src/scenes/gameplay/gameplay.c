@@ -43,16 +43,26 @@ void Ivy_Scene_GameplayInit(IvyGame *game)
     gameplayData->itemManager  = Ivy_ItemManager_Init(&game->arena, game->assets);
     gameplayData->state        = PAUSE_MENU_CLOSED;
 
-    // test
+    // TODO: Dont ask about this shit... just for testing lol!
     const IvyItemAttribute *shirtAttr = Ivy_ItemManager_GetAttribute(&gameplayData->itemManager, 1);
     const IvyItemAttribute *pantsAttr = Ivy_ItemManager_GetAttribute(&gameplayData->itemManager, 2);
     const IvyItemAttribute *pantyAttr = Ivy_ItemManager_GetAttribute(&gameplayData->itemManager, 3);
-    const IvyItemAttribute *cloak = Ivy_ItemManager_GetAttribute(&gameplayData->itemManager, 4);
+    const IvyItemAttribute *cloakAttr = Ivy_ItemManager_GetAttribute(&gameplayData->itemManager, 4);
+    const IvyItemAttribute *broadSwordAttr = Ivy_ItemManager_GetAttribute(&gameplayData->itemManager, 5);
+    const IvyItemAttribute *SaberAttr = Ivy_ItemManager_GetAttribute(&gameplayData->itemManager, 6);
+    const IvyItemAttribute *ShortSwordAttr = Ivy_ItemManager_GetAttribute(&gameplayData->itemManager, 7);
+    const IvyItemAttribute *DaggerAttr = Ivy_ItemManager_GetAttribute(&gameplayData->itemManager, 8);
+    const IvyItemAttribute *LanternAttr = Ivy_ItemManager_GetAttribute(&gameplayData->itemManager, 9);
 
     Ivy_Inventory_AddItem(&gameplayData->player->inventory.bag, shirtAttr->id, shirtAttr->type, 3);
     Ivy_Inventory_AddItem(&gameplayData->player->inventory.bag, pantsAttr->id, pantsAttr->type, 2);
     Ivy_Inventory_AddItem(&gameplayData->player->inventory.bag, pantyAttr->id, pantyAttr->type, 2);
-    Ivy_Inventory_AddItem(&gameplayData->player->inventory.bag, cloak->id, cloak->type, 2);
+    Ivy_Inventory_AddItem(&gameplayData->player->inventory.bag, cloakAttr->id, cloakAttr->type, 2);
+    Ivy_Inventory_AddItem(&gameplayData->player->inventory.bag, broadSwordAttr->id, broadSwordAttr->type, 2);
+    Ivy_Inventory_AddItem(&gameplayData->player->inventory.bag, SaberAttr->id, SaberAttr->type, 2);
+    Ivy_Inventory_AddItem(&gameplayData->player->inventory.bag, ShortSwordAttr->id, ShortSwordAttr->type, 2);
+    Ivy_Inventory_AddItem(&gameplayData->player->inventory.bag, DaggerAttr->id, DaggerAttr->type, 2);
+    Ivy_Inventory_AddItem(&gameplayData->player->inventory.bag, LanternAttr->id, LanternAttr->type, 2);
 
     Ivy_Player_EquipItem(game, gameplayData, 0);
     Ivy_Player_EquipItem(game, gameplayData, 1);
@@ -70,13 +80,16 @@ void Ivy_Scene_GameplayInit(IvyGame *game)
     }
 
     gameplayData->menu.selected = 0;
-    gameplayData->menu.sound    = Ivy_Audio_LoadSoundWav(&game->arena, game->assets, ASSET_AUDIO_CURSOR_WAV);
+    gameplayData->menu.sound = Ivy_Audio_LoadSoundWav(&game->arena, game->assets, ASSET_AUDIO_CURSOR_WAV);
 
     // audio
     gameplayData->music = Ivy_Audio_LoadMusicOGG(&game->arena, game->assets, ASSET_MUSIC_POINT_AND_CLICK_OGG, 192560);
     Ivy_Audio_PlayAudioBuffer(gameplayData->music.stream.buffer);
 
-    gameplayData->inventoryUI.background     = Ivy_Gfx_LoadTextureDDS(game->assets, ASSET_TEXTURES_MENU_EQUIPMENT_TEMPLATE_DDS);
+    gameplayData->inventoryUI.background = Ivy_Gfx_LoadTextureDDS(game->assets, ASSET_TEXTURES_MENU_EQUIPMENT_TEMPLATE_DDS);
+
+    gameplayData->door = Ivy_Door_Init(game->assets, IVY_DOOR_LEFT, (Vector2){ 4 * IVY_TILE_SIZE, 10 * IVY_TILE_SIZE });
+
     game->scenes->actionScene->data = gameplayData;
 }
 

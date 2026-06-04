@@ -20,7 +20,7 @@ IvyCamera Ivy_Camera_Init(void)
     return camera;
 }
 
-void Ivy_Camera_Update(IvyCamera *camera, const Vector2 playerTarget, float mapWidth, float mapHeight)
+void Ivy_Camera_Update(IvyCamera *camera, const Vector2 playerTarget, const float mapWidth, const float mapHeight)
 {
     const float dt = GetFrameTime();
     const float smoothSpeed = 5.0f;

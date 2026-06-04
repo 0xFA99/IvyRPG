@@ -7,6 +7,7 @@
 #include "ivy/core/types.h"
 #include "ivy/entities/player.h"
 #include "ivy/graphics/camera.h"
+#include "ivy/graphics/tilemap.h"
 #include "ivy/scenes/gameplay.h"
 #include "ivy/scenes/types.h"
 #include "ivy/systems/inventory.h"
@@ -203,7 +204,18 @@ void Ivy_Scene_GameplayUpdate(IvyGame *game)
         return;
     }
 
-    Ivy_Player_Update(gameplayData->player, gameplayData->collusionMap, GetFrameTime());
+    IvyDoor *door = &gameplayData->door;
+
+    Ivy_Door_Update(door);
+
+    if (IsKeyPressed(KEY_E)) {
+        if (Ivy_Door_CanInteract(door, gameplayData->player)) {
+            Ivy_Door_Interact(door);
+            Ivy_Door_Update(door);
+        }
+    }
+
+    Ivy_Player_Update(gameplayData->player, gameplayData->collusionMap, &gameplayData->door, GetFrameTime());
 
     const Vector2 playerPosition = Ivy_Player_GetPosition(gameplayData->player);
     const Vector2 mapSize = Ivy_Tilemap_GetDimensions(gameplayData->tilemap);

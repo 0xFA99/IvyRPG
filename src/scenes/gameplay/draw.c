@@ -90,7 +90,18 @@ void Ivy_Scene_GameplayDrawWorld(IvyGame *game)
     Ivy_Collusion_Draw(gameplayData->collusionMap);
     Ivy_Tilemap_Render(gameplayData->tilemap);
 #endif
-    Ivy_Player_Render(gameplayData->player);
+
+    // Test
+    const float playerPosY = gameplayData->player->movement.position.y;
+    const float doorPosY = gameplayData->door.position.y;
+    if (playerPosY > doorPosY) {
+        Ivy_Door_Draw(&gameplayData->door);
+        Ivy_Player_Render(gameplayData->player);
+    } else {
+        Ivy_Player_Render(gameplayData->player);
+        Ivy_Door_Draw(&gameplayData->door);
+    }
+
     EndMode2D();
 }
 

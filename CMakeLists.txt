@@ -146,7 +146,8 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     ivy_module(entities
             src/entities/player/player.c
             src/entities/player/update.c
-            src/entities/player/draw.c)
+            src/entities/player/draw.c
+            src/entities/door.c)
 
     ivy_module(utils
             src/utils/utils.c)

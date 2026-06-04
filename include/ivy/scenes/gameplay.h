@@ -3,8 +3,8 @@
 
 #include "ivy/audio/wav.h"
 #include "ivy/core/types.h"
+#include "ivy/entities/door.h"
 #include "ivy/graphics/camera.h"
-#include "ivy/graphics/tilemap.h"
 #include "ivy/systems/item_manager.h"
 #include "ivy/utils/forward.h"
 
@@ -64,6 +64,7 @@ struct IvySceneGameplayData {
     IvyGameplayMenu menu;
     IvyInventoryUI inventoryUI;
     Music music;
+    IvyDoor door;
 };
 
 void Ivy_Scene_GameplayInit             (IvyGame *game);

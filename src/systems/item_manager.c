@@ -64,7 +64,7 @@ IvyItemManager Ivy_ItemManager_Init(IvyArenaLinear *restrict arena, IvyAssetMana
 const IvyItemAttribute *Ivy_ItemManager_GetAttribute(const IvyItemManager *mgr, const u16 id)
 {
     const u16 idx = id - 1;
-    if (IVY_UNLIKELY(idx >= mgr->totalItem)) return NULL;
+    if (IVY_UNLIKELY(idx > mgr->totalItem)) return NULL;
     return &mgr->attributes[idx];
 }
 

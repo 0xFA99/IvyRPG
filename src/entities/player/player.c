@@ -16,6 +16,8 @@ static const u8 BAKE_SLOT_ORDER[] = {
     IVY_SLOT_MID,
     IVY_SLOT_ACC,
     IVY_SLOT_HAIR,
+    IVY_SLOT_M_ARM,
+    IVY_SLOT_S_ARM
 };
 
 void Ivy_Player_BakeAtlas(IvyGame *restrict game, IvySceneGameplayData *restrict gameplayData)
@@ -50,12 +52,13 @@ void Ivy_Player_BakeAtlas(IvyGame *restrict game, IvySceneGameplayData *restrict
         //     }
         //     continue;
         // }
+        if (eSlot != 0) {
+            const IvyItemVisual *vis = Ivy_ItemManager_GetVisual(itemManager, itemID);
+            if (!vis) continue;
 
-        const IvyItemVisual *vis = Ivy_ItemManager_GetVisual(itemManager, itemID);
-        if (!vis) continue;
-
-        const Texture2D tex = Ivy_Gfx_LoadTextureDDS(assetManager, vis->spriteSheetID);
-        DrawTexture(tex, 0, 0, WHITE);
+            const Texture2D tex = Ivy_Gfx_LoadTextureDDS(assetManager, vis->spriteSheetID);
+            DrawTexture(tex, 0, 0, WHITE);
+        }
     }
 
     DrawTexture(Ivy_TextureManager_Get(textureManager, ASSET_TEXTURES_SPRITESHEETS_BASE_HAIR_DDS), 0, 0, WHITE);

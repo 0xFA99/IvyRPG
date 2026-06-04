@@ -16,7 +16,7 @@
 static Wave load_wave(IvyArenaLinear *restrict arena, IvyAssetManager *restrict manager, const u32 id)
 {
     Wave wave = {0};
-    drwav wav  = {0};
+    drwav wav = {0};
 
     usize wav_size;
     const u8 *data = Ivy_Asset_Get(manager, id, &wav_size);
@@ -42,8 +42,7 @@ static Wave load_wave(IvyArenaLinear *restrict arena, IvyAssetManager *restrict 
     return wave;
 }
 
-IvySound Ivy_Audio_LoadSoundWav(IvyArenaLinear *restrict arena,
-                                IvyAssetManager *restrict manager, const u32 id)
+IvySound Ivy_Audio_LoadSoundWav(IvyArenaLinear *restrict arena, IvyAssetManager *restrict manager, const u32 id)
 {
     IvySound sound = {0};
     sound.snap = Ivy_Arena_LinearGetSnapshot(arena);
