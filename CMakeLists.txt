@@ -132,7 +132,8 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
             src/systems/item_manager.c
             src/systems/profile_manager.c
             src/systems/inventory.c
-            src/systems/texture_manager.c)
+            src/systems/texture_manager.c
+            src/systems/object_manager.c)
 
     ivy_module(scenes
             src/scenes/title.c

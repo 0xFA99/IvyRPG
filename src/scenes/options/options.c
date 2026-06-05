@@ -19,9 +19,9 @@ void Ivy_Scene_OptionsInit(IvyGame *game)
 
     _ivyOptions_ReloadLocales(optionsData, game->locale);
 
-    optionsData->sound = Ivy_Audio_LoadSoundWav(&game->arena, game->assets, ASSET_AUDIO_CURSOR_WAV);
+    optionsData->sound = Ivy_Audio_LoadSoundWav(&game->arena, game->assetManager, ASSET_AUDIO_CURSOR_WAV);
 
-    game->scenes->actionScene->data = optionsData;
+    game->sceneManager->actionScene->data = optionsData;
 }
 
 void Ivy_Scene_OptionsRebuildTextures(IvyGame *game)

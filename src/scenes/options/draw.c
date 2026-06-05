@@ -62,7 +62,7 @@ static void _ivyOptions_DrawMainMenu(IvyGame *restrict game, IvySceneOptionsData
 {
     const IvyVirtualScreen *virtualScreen = game->viewport;
     const float scale = virtualScreen->scale;
-    const Texture2D cursorTex = Ivy_TextureManager_Get(game->texManager, ASSET_TEXTURES_CURSOR_WHITE_DDS);
+    const Texture2D cursorTex = Ivy_TextureManager_Get(game->textureManager, ASSET_TEXTURES_CURSOR_WHITE_DDS);
 
     const float menuY = VIRTUAL_HEIGHT - OPTIONS_MAIN_MENU_MARGIN_BOT - (OPTIONS_LOCALE_COUNT - 1) * OPTIONS_MAIN_MENU_SPACING;
 
@@ -163,7 +163,7 @@ static void _ivyOptions_DrawKeybindPopup(const IvyGame *restrict game, IvySceneO
 
     // Cursor
     {
-        const Texture2D cursorTex = Ivy_TextureManager_Get(game->texManager, ASSET_TEXTURES_CURSOR_WHITE_DDS);
+        const Texture2D cursorTex = Ivy_TextureManager_Get(game->textureManager, ASSET_TEXTURES_CURSOR_WHITE_DDS);
         const float textH   = OPTIONS_KEYBIND_POPUP_TEXT_SIZE * scale * 0.8f;
         const float cursorH = (float)cursorTex.height * scale * OPTIONS_KEYBIND_POPUP_CURSOR_SCALE;
         const float vOff    = (textH - cursorH) * 0.25f;
@@ -224,7 +224,7 @@ static void _ivyOptions_DrawKeybindPopup(const IvyGame *restrict game, IvySceneO
 
 void Ivy_Scene_OptionsDrawUI(IvyGame *game)
 {
-    IvySceneOptionsData *od = game->scenes->actionScene->data;
+    IvySceneOptionsData *od = game->sceneManager->actionScene->data;
 
     if (od->keybind.state != OPTIONS_CONFIG_KEY_CLOSED) {
         _ivyOptions_DrawMenuDimmed(game, od);

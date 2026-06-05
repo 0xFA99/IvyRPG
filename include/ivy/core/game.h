@@ -26,9 +26,10 @@ struct IvyGame {
     IvyArenaLinear          arena;                      // 32
 
     const IvyKeybindInfo   *keybind;                    // 8
-    IvyAssetManager        *assets;                     // 8
-    IvyTextureManager      *texManager;
-    IvySceneManager        *scenes;                     // 8
+    IvyObjectManager       *objectManager;
+    IvyAssetManager        *assetManager;                     // 8
+    IvyTextureManager      *textureManager;
+    IvySceneManager        *sceneManager;                     // 8
     IvyVirtualScreen       *viewport;                   // 8
     IvySaveManager         *saveManager;                // 8
     IvyLocale              *locale;                     // 8

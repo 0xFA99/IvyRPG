@@ -15,6 +15,7 @@
 #include "ivy/systems/inventory.h"
 #include "ivy/systems/item_manager.h"
 #include "ivy/systems/locale_manager.h"
+#include "ivy/systems/object_manager.h"
 #include "ivy/systems/scene_manager.h"
 #include "ivy/utils/file_ids.h"
 #include "ivy/utils/forward.h"
@@ -36,12 +37,20 @@ void Ivy_Scene_GameplayInit(IvyGame *game)
     IvySceneGameplayData *gameplayData = Ivy_Arena_LinearAllocZero(&game->arena, sizeof(IvySceneGameplayData));
     IVY_ASSERT(gameplayData != NULL, "[Scene Gameplay] Failed to allocate SceneGameplayData!");
 
-    gameplayData->tilemap      = Ivy_Tilemap_LoadMap(game->assets, &game->arena, ASSET_MAPS_MAP_1_METADATA_BIN, ASSET_MAPS_MAP_1_VERTEX_BIN);
-    gameplayData->collusionMap = Ivy_Collusion_Load(&game->arena, game->assets);
-    gameplayData->player       = Ivy_Player_Init(&game->arena, game->assets, (Vector2){ 10.0f, 16.0f });
+    gameplayData->tilemap      = Ivy_Tilemap_LoadMap(game->assetManager, &game->arena, ASSET_MAPS_MAP_1_METADATA_BIN, ASSET_MAPS_MAP_1_VERTEX_BIN);
+    gameplayData->collusionMap = Ivy_Collusion_Load(&game->arena, game->assetManager);
+    // gameplayData->player       = Ivy_Player_Init(&game->arena, game->assetManager, (Vector2){ 10.0f, 16.0f });
+
+    game->objectManager = Ivy_ObjectManager_Init(&game->arena);
+    Ivy_ObjectManager_CreatePlayer(game->objectManager, &game->arena, game->assetManager, (Vector2){ 10, 16 });
+    IvyPlayer *player = (IvyPlayer *)Ivy_ObjectManager_GetPlayer(game->objectManager)->data;
+
+    Ivy_ObjectManager_CreateDoor(game->objectManager, &game->arena, game->assetManager, IVY_DOOR_LEFT, (Vector2){ 4, 10 });
+
     gameplayData->camera       = Ivy_Camera_Init();
-    gameplayData->itemManager  = Ivy_ItemManager_Init(&game->arena, game->assets);
+    gameplayData->itemManager  = Ivy_ItemManager_Init(&game->arena, game->assetManager);
     gameplayData->state        = PAUSE_MENU_CLOSED;
+
 
     // TODO: Dont ask about this shit... just for testing lol!
     const IvyItemAttribute *shirtAttr = Ivy_ItemManager_GetAttribute(&gameplayData->itemManager, 1);
@@ -54,21 +63,21 @@ void Ivy_Scene_GameplayInit(IvyGame *game)
     const IvyItemAttribute *DaggerAttr = Ivy_ItemManager_GetAttribute(&gameplayData->itemManager, 8);
     const IvyItemAttribute *LanternAttr = Ivy_ItemManager_GetAttribute(&gameplayData->itemManager, 9);
 
-    Ivy_Inventory_AddItem(&gameplayData->player->inventory.bag, shirtAttr->id, shirtAttr->type, 3);
-    Ivy_Inventory_AddItem(&gameplayData->player->inventory.bag, pantsAttr->id, pantsAttr->type, 2);
-    Ivy_Inventory_AddItem(&gameplayData->player->inventory.bag, pantyAttr->id, pantyAttr->type, 2);
-    Ivy_Inventory_AddItem(&gameplayData->player->inventory.bag, cloakAttr->id, cloakAttr->type, 2);
-    Ivy_Inventory_AddItem(&gameplayData->player->inventory.bag, broadSwordAttr->id, broadSwordAttr->type, 2);
-    Ivy_Inventory_AddItem(&gameplayData->player->inventory.bag, SaberAttr->id, SaberAttr->type, 2);
-    Ivy_Inventory_AddItem(&gameplayData->player->inventory.bag, ShortSwordAttr->id, ShortSwordAttr->type, 2);
-    Ivy_Inventory_AddItem(&gameplayData->player->inventory.bag, DaggerAttr->id, DaggerAttr->type, 2);
-    Ivy_Inventory_AddItem(&gameplayData->player->inventory.bag, LanternAttr->id, LanternAttr->type, 2);
+    Ivy_Inventory_AddItem(&player->inventory.bag, shirtAttr->id, shirtAttr->type, 3);
+    Ivy_Inventory_AddItem(&player->inventory.bag, pantsAttr->id, pantsAttr->type, 2);
+    Ivy_Inventory_AddItem(&player->inventory.bag, pantyAttr->id, pantyAttr->type, 2);
+    Ivy_Inventory_AddItem(&player->inventory.bag, cloakAttr->id, cloakAttr->type, 2);
+    Ivy_Inventory_AddItem(&player->inventory.bag, broadSwordAttr->id, broadSwordAttr->type, 2);
+    Ivy_Inventory_AddItem(&player->inventory.bag, SaberAttr->id, SaberAttr->type, 2);
+    Ivy_Inventory_AddItem(&player->inventory.bag, ShortSwordAttr->id, ShortSwordAttr->type, 2);
+    Ivy_Inventory_AddItem(&player->inventory.bag, DaggerAttr->id, DaggerAttr->type, 2);
+    Ivy_Inventory_AddItem(&player->inventory.bag, LanternAttr->id, LanternAttr->type, 2);
 
     Ivy_Player_EquipItem(game, gameplayData, 0);
     Ivy_Player_EquipItem(game, gameplayData, 1);
 
-    gameplayData->inventoryUI.sound[0]        = Ivy_Audio_LoadSoundWav(&game->arena, game->assets, ASSET_AUDIO_EQUIP2_WAV);
-    gameplayData->inventoryUI.sound[1]        = Ivy_Audio_LoadSoundWav(&game->arena, game->assets, ASSET_AUDIO_EQUIP3_WAV);
+    gameplayData->inventoryUI.sound[0]        = Ivy_Audio_LoadSoundWav(&game->arena, game->assetManager, ASSET_AUDIO_EQUIP2_WAV);
+    gameplayData->inventoryUI.sound[1]        = Ivy_Audio_LoadSoundWav(&game->arena, game->assetManager, ASSET_AUDIO_EQUIP3_WAV);
     gameplayData->inventoryUI.selectedSlot    = INVENTORY_SLOT_NONE;
     gameplayData->inventoryUI.scrollOffset    = 0;
     gameplayData->inventoryUI.visibleRows     = 4;
@@ -80,17 +89,17 @@ void Ivy_Scene_GameplayInit(IvyGame *game)
     }
 
     gameplayData->menu.selected = 0;
-    gameplayData->menu.sound = Ivy_Audio_LoadSoundWav(&game->arena, game->assets, ASSET_AUDIO_CURSOR_WAV);
+    gameplayData->menu.sound = Ivy_Audio_LoadSoundWav(&game->arena, game->assetManager, ASSET_AUDIO_CURSOR_WAV);
 
     // audio
-    gameplayData->music = Ivy_Audio_LoadMusicOGG(&game->arena, game->assets, ASSET_MUSIC_POINT_AND_CLICK_OGG, 192560);
+    gameplayData->music = Ivy_Audio_LoadMusicOGG(&game->arena, game->assetManager, ASSET_MUSIC_POINT_AND_CLICK_OGG, 192560);
     Ivy_Audio_PlayAudioBuffer(gameplayData->music.stream.buffer);
 
-    gameplayData->inventoryUI.background = Ivy_Gfx_LoadTextureDDS(game->assets, ASSET_TEXTURES_MENU_EQUIPMENT_TEMPLATE_DDS);
+    gameplayData->inventoryUI.background = Ivy_Gfx_LoadTextureDDS(game->assetManager, ASSET_TEXTURES_MENU_EQUIPMENT_TEMPLATE_DDS);
 
-    gameplayData->door = Ivy_Door_Init(game->assets, IVY_DOOR_LEFT, (Vector2){ 4 * IVY_TILE_SIZE, 10 * IVY_TILE_SIZE });
+    // gameplayData->door = Ivy_Door_Init(&game->arena, game->assetManager, IVY_DOOR_LEFT, (Vector2){ 4 * IVY_TILE_SIZE, 10 * IVY_TILE_SIZE });
 
-    game->scenes->actionScene->data = gameplayData;
+    game->sceneManager->actionScene->data = gameplayData;
 }
 
 void Ivy_Scene_GameplayUnload(IvySceneManager *sm)
@@ -103,7 +112,7 @@ void Ivy_Scene_GameplayUnload(IvySceneManager *sm)
 
     Ivy_Tilemap_Unload(gd->tilemap);
     Ivy_Collusion_Unload(gd->collusionMap);
-    Ivy_Player_Unload(gd->player);
+    // Ivy_Player_Unload(gd->player);
 
     Ivy_Audio_UnloadSound(&gd->menu.sound);
     Ivy_Audio_UnloadStream(&gd->music);

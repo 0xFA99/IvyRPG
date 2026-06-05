@@ -37,16 +37,16 @@ void Ivy_Scene_TitleInit(IvyGame *game)
 
     titleData->targetY = 0.0f;
 
-    titleData->music = Ivy_Audio_LoadMusicOGG(&game->arena, game->assets, ASSET_MUSIC_BARREN_AMBIENCE_OGG, 199769);
+    titleData->music = Ivy_Audio_LoadMusicOGG(&game->arena, game->assetManager, ASSET_MUSIC_BARREN_AMBIENCE_OGG, 199769);
     PlayMusicStream(titleData->music);
 
-    titleData->sound = Ivy_Audio_LoadSoundWav(&game->arena, game->assets, ASSET_AUDIO_CURSOR_WAV);
-    game->scenes->actionScene->data = titleData;
+    titleData->sound = Ivy_Audio_LoadSoundWav(&game->arena, game->assetManager, ASSET_AUDIO_CURSOR_WAV);
+    game->sceneManager->actionScene->data = titleData;
 }
 
 void Ivy_Scene_TitleUpdate(IvyGame *game)
 {
-    IvySceneTitleData *titleData = game->scenes->actionScene->data;
+    IvySceneTitleData *titleData = game->sceneManager->actionScene->data;
 
     Ivy_Audio_UpdateMusicOGG(&titleData->music);
 
@@ -72,19 +72,19 @@ void Ivy_Scene_TitleUpdate(IvyGame *game)
                 break;
 
             case MENU_EXIT:
-                game->scenes->shouldExit = true;
+                game->sceneManager->shouldExit = true;
                 break;
 
             default: break;
         }
     }
 
-    if (IsKeyPressed(KEY_ESCAPE)) game->scenes->shouldExit = true;
+    if (IsKeyPressed(KEY_ESCAPE)) game->sceneManager->shouldExit = true;
 }
 
 void Ivy_Scene_TitleDrawWorld(IvyGame *game)
 {
-    const Texture2D background = Ivy_TextureManager_Get(game->texManager, ASSET_TEXTURES_BACKGROUND_DDS);
+    const Texture2D background = Ivy_TextureManager_Get(game->textureManager, ASSET_TEXTURES_BACKGROUND_DDS);
 
     DrawTexturePro(background,
         (Rectangle){0, 0, (float)background.width, (float)background.height},
@@ -94,9 +94,9 @@ void Ivy_Scene_TitleDrawWorld(IvyGame *game)
 
 void Ivy_Scene_TitleDrawUI(IvyGame *game)
 {
-    IvySceneTitleData *titleData     = game->scenes->actionScene->data;
+    IvySceneTitleData *titleData     = game->sceneManager->actionScene->data;
     const IvyVirtualScreen *viewport = game->viewport;
-    const Texture2D cursorTex        = Ivy_TextureManager_Get(game->texManager, ASSET_TEXTURES_CURSOR_WHITE_DDS);
+    const Texture2D cursorTex        = Ivy_TextureManager_Get(game->textureManager, ASSET_TEXTURES_CURSOR_WHITE_DDS);
     const float scale                = viewport->scale;
 
     // Menu start position

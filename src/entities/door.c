@@ -14,17 +14,24 @@ static const Rectangle DOOR_RECTS[IVY_DOOR_MAX] = {
     [IVY_DOOR_BOTH]  = { .x = 0,  .y = 0, .width = 64, .height = 64 }
 };
 
-IvyDoor Ivy_Door_Init(IvyAssetManager *assetManager, IvyDoorSide side, Vector2 position)
+IvyDoor *Ivy_Door_Init(IvyArenaLinear *restrict arena, IvyAssetManager *restrict assetManager,
+                              const IvyDoorSide side, const Vector2 position)
 {
-    IvyDoor door = {0};
-    door.texture = Ivy_Gfx_LoadTextureDDS(assetManager, ASSET_TEXTURES_DOORS_DDS);
+    IvyDoor *door = Ivy_Arena_LinearAllocZero(arena, sizeof(IvyDoor));
+    door->texture = Ivy_Gfx_LoadTextureDDS(assetManager, ASSET_TEXTURES_DOORS_DDS);
 
-    door.side = side;
-    door.position = position;
-    door.isOpened = false;
+    door->side = side;
+    door->position = (Vector2) {
+        .x = position.x * IVY_TILE_SIZE,
+        .y = position.y * IVY_TILE_SIZE
+    };
+    door->isOpened = false;
 
-    Rectangle baseRect = DOOR_RECTS[door.side];
-    door.rect = baseRect;
+    Rectangle baseRect = DOOR_RECTS[door->side];
+    door->rect = baseRect;
+
+    door->sound[IVY_DOOR_STATE_CLOSED] = Ivy_Audio_LoadSoundWav(arena, assetManager, ASSET_AUDIO_DOOR_CLOSE_WAV);
+    door->sound[IVY_DOOR_STATE_OPENED] = Ivy_Audio_LoadSoundWav(arena, assetManager, ASSET_AUDIO_DOOR_OPEN_WAV);
 
     return door;
 }
@@ -43,10 +50,12 @@ void Ivy_Door_Update(IvyDoor *door)
             .width = baseRect.width,
             .height = 76
         };
+        Ivy_Audio_PlayAudioBuffer(door->sound[IVY_DOOR_STATE_OPENED].data.stream.buffer);
     }
     else
     {
         door->rect = baseRect;
+        Ivy_Audio_PlayAudioBuffer(door->sound[IVY_DOOR_STATE_CLOSED].data.stream.buffer);
     }
 }
 
@@ -115,11 +124,11 @@ bool Ivy_Door_IsSolid(const IvyDoor *door) {
 void Ivy_Door_GetTileRect(const IvyDoor *door, int *outTileX, int *outTileY, int *outTileW, int *outTileH) {
     if (!door) return;
     *outTileX = (int)(door->position.x / IVY_TILE_SIZE);
-    *outTileY = (int)(door->position.y / IVY_TILE_SIZE);
+    *outTileY = (int)(door->position.y / IVY_TILE_SIZE) + 1;
 
     const Rectangle baseRect = DOOR_RECTS[door->side];
     *outTileW = (int)(baseRect.width  / IVY_TILE_SIZE);
-    *outTileH = (int)(baseRect.height / IVY_TILE_SIZE);
+    *outTileH = (int)(baseRect.height / IVY_TILE_SIZE) - 1;
 }
 
 bool Ivy_Door_CanInteract(const IvyDoor *door, const IvyPlayer *player) {

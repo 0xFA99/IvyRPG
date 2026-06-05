@@ -37,17 +37,17 @@ static const IvySceneVTable scene_vtables[] = {
 
 static void Ivy_SceneManager_Load(IvyGame *game, const IvySceneType nextType)
 {
-    if (IVY_LIKELY(game->scenes->actionScene && game->scenes->actionScene->table->Unload))
-        game->scenes->actionScene->table->Unload(game->scenes);
+    if (IVY_LIKELY(game->sceneManager->actionScene && game->sceneManager->actionScene->table->Unload))
+        game->sceneManager->actionScene->table->Unload(game->sceneManager);
 
     Ivy_Audio_ResetSystemBuffers();
 
-    Ivy_Arena_LinearRestore(&game->arena, game->scenes->snapshot);
+    Ivy_Arena_LinearRestore(&game->arena, game->sceneManager->snapshot);
 
     IvyScene *scene = Ivy_Arena_LinearAllocZero(&game->arena, sizeof(IvyScene));
     IVY_ENSURE(scene != NULL);
 
-    game->scenes->actionScene = scene;
+    game->sceneManager->actionScene = scene;
     scene->type = nextType;
 
     IVY_ASSERT(nextType >= 0 && nextType < SCENE_COUNT, "Invalid Scene Type!");
@@ -58,12 +58,12 @@ static void Ivy_SceneManager_Load(IvyGame *game, const IvySceneType nextType)
     }
 
     scene->needsRebuild = true;
-    game->scenes->sceneChanged = true;
+    game->sceneManager->sceneChanged = true;
 }
 
 void Ivy_SceneManager_RebuildIfNeeded(IvyGame *game)
 {
-    IvyScene *scene = game->scenes->actionScene;
+    IvyScene *scene = game->sceneManager->actionScene;
 
     if (scene && scene->needsRebuild && scene->table->RebuildTextures)
     {
@@ -80,8 +80,8 @@ IvySceneManager *Ivy_SceneManager_Init(IvyGame *restrict game, IvyAssetManager *
     IVY_ENSURE(sceneManager != NULL);
 
     sceneManager->snapshot = Ivy_Arena_LinearGetSnapshot(&game->arena);
-    game->assets = assets;
-    game->scenes = sceneManager;
+    game->assetManager = assets;
+    game->sceneManager = sceneManager;
 
     Ivy_SceneManager_Load(game, SCENE_TITLE);
 

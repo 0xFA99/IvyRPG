@@ -1,6 +1,7 @@
 #ifndef IVY_ENTITIES_DOOR_H
 #define IVY_ENTITIES_DOOR_H
 
+#include "ivy/audio/wav.h"
 #include "ivy/utils/forward.h"
 
 #include "raylib/raylib.h"
@@ -18,15 +19,23 @@ typedef enum {
     IVY_DOOR_MAX
 } IvyDoorSide;
 
-typedef struct {
+typedef enum {
+    IVY_DOOR_STATE_CLOSED = 0,
+    IVY_DOOR_STATE_OPENED,
+    IVY_DOOR_STATE_MAX
+} IvyDoorState;
+
+struct IvyDoor {
     Texture2D       texture;
     Rectangle       rect;
     Vector2         position;
     IvyDoorSide     side;
     bool            isOpened;
-} IvyDoor;
+    IvySound        sound[IVY_DOOR_STATE_MAX];
+};
 
-IvyDoor Ivy_Door_Init(IvyAssetManager *assetManager, IvyDoorSide side, Vector2 position);
+IvyDoor *Ivy_Door_Init(IvyArenaLinear *restrict arena, IvyAssetManager *restrict assetManager, IvyDoorSide side,
+                              Vector2 position);
 void Ivy_Door_Update(IvyDoor *door);
 void Ivy_Door_Draw(const IvyDoor *door);
 

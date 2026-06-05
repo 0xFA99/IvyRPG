@@ -55,7 +55,7 @@ static void _ivyOptions_ApplyResolution(const IvyGame *game, const u32 index)
     SetWindowSize(SCREEN_SIZE[index].width, SCREEN_SIZE[index].height);
     Ivy_VirtualScreen_Update(game->viewport, (Vector2){ (float)SCREEN_SIZE[index].width, (float)SCREEN_SIZE[index].height });
 
-    game->scenes->actionScene->needsRebuild = true;
+    game->sceneManager->actionScene->needsRebuild = true;
 }
 
 void _ivyOptions_ReloadLocales(IvySceneOptionsData *restrict optionsData, const IvyLocale *restrict locale)
@@ -133,7 +133,7 @@ static void _ivyOptions_UpdateLocale(IvyGame *restrict game, IvySceneOptionsData
 
     const u32 hash = game->locale->hashID;
     game->saveManager->save->profile.localeID = hash;
-    Ivy_Locale_Update(game->assets, game->locale, hash);
+    Ivy_Locale_Update(game->assetManager, game->locale, hash);
     Ivy_SaveManager_Flush(game->saveManager);
 
     _ivyOptions_ReloadLocales(od, game->locale);
@@ -141,7 +141,7 @@ static void _ivyOptions_UpdateLocale(IvyGame *restrict game, IvySceneOptionsData
 
 void Ivy_Scene_OptionsUpdate(IvyGame *game)
 {
-    IvySceneOptionsData *optionsData = game->scenes->actionScene->data;
+    IvySceneOptionsData *optionsData = game->sceneManager->actionScene->data;
 
     if (optionsData->keybind.state != OPTIONS_CONFIG_KEY_CLOSED) {
         _ivyOptions_UpdateKeybind(game, optionsData);

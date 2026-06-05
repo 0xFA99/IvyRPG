@@ -12,6 +12,7 @@
 #include "ivy/scenes/types.h"
 #include "ivy/systems/inventory.h"
 #include "ivy/systems/scene_manager.h"
+#include "ivy/systems/object_manager.h"
 #include "ivy/utils/forward.h"
 
 static const i8 EQUIP_NAVIGATION[13][4] = {
@@ -38,10 +39,11 @@ IVY_INLINE u8 EquipSlotToItemRow(const u8 equipSlot)
 
 static void GameplayInventory(IvyGame *game)
 {
-    IvySceneGameplayData *gameplayData = game->scenes->actionScene->data;
+    IvySceneGameplayData *gameplayData = game->sceneManager->actionScene->data;
     IvyInventoryUI *ui = &gameplayData->inventoryUI;
+    IvyPlayer *player = (IvyPlayer *)Ivy_ObjectManager_GetPlayer(game->objectManager)->data;
 
-    const IvyInventory *inventory = Ivy_Player_GetInventory(gameplayData->player);
+    const IvyInventory *inventory = Ivy_Player_GetInventory(player);
     const IvyInventoryBag *bag = &inventory->bag;
     const u8 equipmentCount = bag->categoryCount[IVY_ITEM_TYPE_EQUIPMENT];
 
@@ -112,7 +114,7 @@ static void GameplayInventory(IvyGame *game)
         if (IsKeyPressed(game->keybind[IVY_KEY_CONFIRM].currentKey)) {
             const u8 equipSlot = ui->selectedEquip;
             const u16 itemID = Ivy_Inventory_GetEquippedItemID(
-                Ivy_Player_GetInventory(gameplayData->player), equipSlot
+                Ivy_Player_GetInventory(player), equipSlot
             );
             if (itemID != 0) {
                 Ivy_Player_UnequipItem(game, gameplayData, equipSlot);
@@ -145,7 +147,7 @@ static void GameplayInventory(IvyGame *game)
 
 static void GameplayUpdateStatePause(IvyGame *game)
 {
-    IvySceneGameplayData *gameplayData = game->scenes->actionScene->data;
+    IvySceneGameplayData *gameplayData = game->sceneManager->actionScene->data;
 
     const int direction = IsKeyPressed(game->keybind[IVY_KEY_DOWN].currentKey)
                         - IsKeyPressed(game->keybind[IVY_KEY_UP].currentKey);
@@ -178,7 +180,8 @@ static void GameplayUpdateStatePause(IvyGame *game)
 
 void Ivy_Scene_GameplayUpdate(IvyGame *game)
 {
-    IvySceneGameplayData *gameplayData = game->scenes->actionScene->data;
+    IvySceneGameplayData *gameplayData = game->sceneManager->actionScene->data;
+    IvyPlayer *player = (IvyPlayer *)Ivy_ObjectManager_GetPlayer(game->objectManager)->data;
 
     Ivy_Audio_UpdateMusicOGG(&gameplayData->music);
 
@@ -204,20 +207,18 @@ void Ivy_Scene_GameplayUpdate(IvyGame *game)
         return;
     }
 
-    IvyDoor *door = &gameplayData->door;
-
-    Ivy_Door_Update(door);
-
+    IvyDoor *door = (IvyDoor *)Ivy_ObjectManager_GetDoor(game->objectManager)->data;
     if (IsKeyPressed(KEY_E)) {
-        if (Ivy_Door_CanInteract(door, gameplayData->player)) {
+        if (Ivy_Door_CanInteract(door, player) && !player->movement.isMoving && player->graphics.action != PLAYER_ACTION_ATTACK) {
             Ivy_Door_Interact(door);
             Ivy_Door_Update(door);
         }
     }
 
-    Ivy_Player_Update(gameplayData->player, gameplayData->collusionMap, &gameplayData->door, GetFrameTime());
+    Ivy_Player_Update(player, gameplayData->collusionMap, door, GetFrameTime());
+    // Ivy_Player_Update(player, gameplayData->collusionMap, NULL, GetFrameTime());
 
-    const Vector2 playerPosition = Ivy_Player_GetPosition(gameplayData->player);
+    const Vector2 playerPosition = Ivy_Player_GetPosition(player);
     const Vector2 mapSize = Ivy_Tilemap_GetDimensions(gameplayData->tilemap);
     Ivy_Camera_Update(&gameplayData->camera, playerPosition, mapSize.x * IVY_TILE_SIZE, mapSize.y * IVY_TILE_SIZE);
 }

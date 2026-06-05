@@ -17,7 +17,7 @@ int main(void)
 
     IvyGame game = Ivy_Game_Init((Vector2){DEFAULT_SCREEN_WIDTH, DEFAULT_SCREEN_HEIGHT});
 
-    while (!WindowShouldClose() && !game.scenes->shouldExit)
+    while (!WindowShouldClose() && !game.sceneManager->shouldExit)
     {
         Ivy_Game_Update(&game);
         Ivy_Game_Draw(&game);

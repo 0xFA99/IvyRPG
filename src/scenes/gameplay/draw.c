@@ -20,6 +20,8 @@
 
 #include <stdio.h>
 
+#include "ivy/systems/object_manager.h"
+
 enum {
     POPUP_WIDTH  = 200,
     POPUP_HEIGHT = 160,
@@ -80,7 +82,9 @@ IVY_INLINE void DrawAtlasRegion(const Texture2D *atlas, const Rectangle src, con
 
 void Ivy_Scene_GameplayDrawWorld(IvyGame *game)
 {
-    const IvySceneGameplayData *gameplayData = game->scenes->actionScene->data;
+    const IvySceneGameplayData *gameplayData = game->sceneManager->actionScene->data;
+    IvyPlayer *player = (IvyPlayer *)Ivy_ObjectManager_GetPlayer(game->objectManager)->data;
+    IvyDoor *door = (IvyDoor *)Ivy_ObjectManager_GetDoor(game->objectManager)->data;
 
     BeginMode2D(gameplayData->camera.view);
 #ifdef IVY_DEBUG
@@ -92,14 +96,14 @@ void Ivy_Scene_GameplayDrawWorld(IvyGame *game)
 #endif
 
     // Test
-    const float playerPosY = gameplayData->player->movement.position.y;
-    const float doorPosY = gameplayData->door.position.y;
+    const float playerPosY = player->movement.position.y;
+    const float doorPosY = door->position.y;
     if (playerPosY > doorPosY) {
-        Ivy_Door_Draw(&gameplayData->door);
-        Ivy_Player_Render(gameplayData->player);
+        Ivy_Door_Draw(door);
+        Ivy_Player_Render(player);
     } else {
-        Ivy_Player_Render(gameplayData->player);
-        Ivy_Door_Draw(&gameplayData->door);
+        Ivy_Player_Render(player);
+        Ivy_Door_Draw(door);
     }
 
     EndMode2D();
@@ -107,7 +111,7 @@ void Ivy_Scene_GameplayDrawWorld(IvyGame *game)
 
 void Ivy_Scene_GameplayRebuildTextures(IvyGame *game)
 {
-    IvySceneGameplayData *gameplayData = game->scenes->actionScene->data;
+    IvySceneGameplayData *gameplayData = game->sceneManager->actionScene->data;
     Ivy_Player_BakeAtlas(game, gameplayData);
 }
 
@@ -136,7 +140,7 @@ static void DrawMenuBackground(const IvyTextureManager *restrict texManager, con
 static void DrawMenuSelectionCursor(const IvyGame *restrict game, const IvyVirtualScreen *restrict viewport,
                                     const float textVirtualX, const float itemVirtualY)
 {
-    const Texture2D cursorTex = Ivy_TextureManager_Get(game->texManager, ASSET_TEXTURES_CURSOR_YELLOW_DDS);
+    const Texture2D cursorTex = Ivy_TextureManager_Get(game->textureManager, ASSET_TEXTURES_CURSOR_YELLOW_DDS);
     const float cursorScale = viewport->scale * 0.5f;
 
     const Vector2 pos = Ivy_Gfx_GetScreenPos(viewport, (Vector2){
@@ -195,9 +199,9 @@ static void DrawInventoryLayout(const IvySceneGameplayData *restrict gameplayDat
     );
 }
 
-static void DrawEquippedItemIcons(const IvySceneGameplayData *restrict gameplayData, const IvyTextureManager *restrict texManager, const IvyVirtualScreen *restrict viewport)
+static void DrawEquippedItemIcons(IvyPlayer *restrict player, const IvySceneGameplayData *restrict gameplayData, const IvyTextureManager *restrict texManager, const IvyVirtualScreen *restrict viewport)
 {
-    const IvyInventory *inventory  = Ivy_Player_GetInventory(gameplayData->player);
+    const IvyInventory *inventory  = Ivy_Player_GetInventory(player);
     const float scale = viewport->scale;
 
     const Texture2D iconTex = Ivy_TextureManager_Get(texManager, ASSET_TEXTURES_ICONS_DDS);
@@ -232,7 +236,7 @@ static void DrawEquippedItemIcons(const IvySceneGameplayData *restrict gameplayD
 
 static void DrawEquipSlots(const IvyGame *restrict game, const IvyVirtualScreen *restrict viewport)
 {
-    const IvySceneGameplayData *gd = game->scenes->actionScene->data;
+    const IvySceneGameplayData *gd = game->sceneManager->actionScene->data;
     const IvyInventoryUI       *ui = &gd->inventoryUI;
     const float scale = viewport->scale;
 
@@ -332,17 +336,18 @@ static void DrawItemList(const IvyItemDrawCtx *ctx, const IvyVirtualScreen *view
 
 void Ivy_Scene_GameplayDrawUI(IvyGame *game)
 {
-    const IvySceneGameplayData *gameplayData = game->scenes->actionScene->data;
+    IvyPlayer *player = (IvyPlayer *)Ivy_ObjectManager_GetPlayer(game->objectManager)->data;
+    const IvySceneGameplayData *gameplayData = game->sceneManager->actionScene->data;
     if (gameplayData->state == PAUSE_MENU_CLOSED) return;
 
     const IvyVirtualScreen *viewport = game->viewport;
 
     if (gameplayData->state == PAUSE_MENU_INVENTORY || gameplayData->menu.selected == 3)
     {
-        DrawMenuBackground(game->texManager, viewport);
+        DrawMenuBackground(game->textureManager, viewport);
         DrawMenuItems(game, gameplayData, viewport);
         DrawInventoryLayout(gameplayData, viewport);
-        DrawEquippedItemIcons(gameplayData, game->texManager, viewport);
+        DrawEquippedItemIcons(player, gameplayData, game->textureManager, viewport);
 
         if (gameplayData->inventoryUI.selectedSlot != INVENTORY_SLOT_NONE) {
             DrawEquipSlots(game, viewport);
@@ -351,20 +356,20 @@ void Ivy_Scene_GameplayDrawUI(IvyGame *game)
         // Di fungsi wrapper utama lu (misal Ivy_Inventory_Draw):
         IvyItemDrawCtx drawCtx = {
             .ui          = &gameplayData->inventoryUI,
-            .inventory   = Ivy_Player_GetInventory(gameplayData->player),
+            .inventory   = Ivy_Player_GetInventory(player),
             .itemManager = &gameplayData->itemManager,
             .font        = game->fonts[IVY_FONT_SECONDARY], // Fix bug lu yang tadi ilang pointer game
             .scale       = viewport->scale
         };
 
-        const Texture2D iconTex = Ivy_TextureManager_Get(game->texManager, ASSET_TEXTURES_ICONS_DDS);
+        const Texture2D iconTex = Ivy_TextureManager_Get(game->textureManager, ASSET_TEXTURES_ICONS_DDS);
         DrawItemList(&drawCtx, viewport, &iconTex);
 
         return;
     }
 
     if (gameplayData->state == PAUSE_MENU_OPENED) {
-        DrawMenuBackground(game->texManager, viewport);
+        DrawMenuBackground(game->textureManager, viewport);
         DrawMenuItems(game, gameplayData, viewport);
     }
 }

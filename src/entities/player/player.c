@@ -3,6 +3,7 @@
 #include "ivy/systems/texture_manager.h"
 #include "ivy/scenes/gameplay.h"
 #include "ivy/graphics/gfx.h"
+#include "ivy/systems/object_manager.h"
 #include "ivy/utils/file_ids.h"
 #include "raylib/rlgl.h"
 
@@ -22,10 +23,10 @@ static const u8 BAKE_SLOT_ORDER[] = {
 
 void Ivy_Player_BakeAtlas(IvyGame *restrict game, IvySceneGameplayData *restrict gameplayData)
 {
-    IvyPlayer *player = gameplayData->player;
-    IvyAssetManager *assetManager = game->assets;
+    IvyPlayer *player = (IvyPlayer *)Ivy_ObjectManager_GetPlayer(game->objectManager)->data;
+    IvyAssetManager *assetManager = game->assetManager;
     const IvyItemManager *itemManager = &gameplayData->itemManager;
-    const IvyTextureManager *textureManager = game->texManager;
+    const IvyTextureManager *textureManager = game->textureManager;
 
     if (player->graphics.atlasReady) {
         rlUnloadTexture(player->graphics.atlas.texture.id);
@@ -100,7 +101,7 @@ IvyInventory *Ivy_Player_GetInventory(IvyPlayer *player)
 
 void Ivy_Player_EquipItem(IvyGame *restrict game, IvySceneGameplayData *restrict gameplayData, const u8 bagIndex)
 {
-    IvyPlayer *player = gameplayData->player;
+    IvyPlayer *player = (IvyPlayer *)Ivy_ObjectManager_GetPlayer(game->objectManager)->data;
     const IvyItemManager *itemManager = &gameplayData->itemManager;
     const IvyInventoryBag *bag = &player->inventory.bag;
 
@@ -116,7 +117,7 @@ void Ivy_Player_EquipItem(IvyGame *restrict game, IvySceneGameplayData *restrict
 
 void Ivy_Player_UnequipItem(IvyGame *restrict game, IvySceneGameplayData *restrict gameplayData, const u8 equipSlot)
 {
-    IvyPlayer *player = gameplayData->player;
+    IvyPlayer *player = (IvyPlayer *)Ivy_ObjectManager_GetPlayer(game->objectManager)->data;
     Ivy_Inventory_Unequip(&player->inventory, equipSlot);
     Ivy_Player_BakeAtlas(game, gameplayData);
 }

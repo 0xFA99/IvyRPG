@@ -56,7 +56,7 @@ typedef struct {
 
 struct IvySceneGameplayData {
     IvyTilemap  *tilemap;
-    IvyPlayer   *player;
+    // IvyPlayer   *player;
     IvyCamera   camera;
     IvyCollusionMap *collusionMap;
     IvyItemManager itemManager;
@@ -64,7 +64,7 @@ struct IvySceneGameplayData {
     IvyGameplayMenu menu;
     IvyInventoryUI inventoryUI;
     Music music;
-    IvyDoor door;
+    // IvyDoor door;
 };
 
 void Ivy_Scene_GameplayInit             (IvyGame *game);

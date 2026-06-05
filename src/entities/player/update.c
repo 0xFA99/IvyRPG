@@ -157,17 +157,12 @@ void Ivy_Player_Update(IvyPlayer *restrict player, const IvyCollusionMap *restri
                     };
 
                     bool isSolid = collisionMap && Ivy_Collusion_IsTileSolid(collisionMap, (int)candidate.x, (int)candidate.y);
-                    if (!isSolid && doors != NULL) {
-                        if (Ivy_Door_IsSolid(doors)) {
-                            int doorX, doorY, doorW, doorH;
-                            Ivy_Door_GetTileRect(doors, &doorX, &doorY, &doorW, &doorH);
+                    if (!isSolid && Ivy_Door_IsSolid(doors)) {
+                        int doorX, doorY, doorW, doorH;
+                        Ivy_Door_GetTileRect(doors, &doorX, &doorY, &doorW, &doorH);
 
-                            int collisionTileY = doorY + 1;
-                            int collisionTileH = 1; // Tinggi collision pintu sekarang hanya 1 tile
-                            if ((int)candidate.x >= doorX && (int)candidate.x < doorX + doorW &&
-             (int)candidate.y >= collisionTileY && (int)candidate.y < collisionTileY + collisionTileH) {
-                                isSolid = true;
-             }
+                        if ((int)candidate.x >= doorX && (int)candidate.x < doorX + doorW && (int)candidate.y >= doorY && (int)candidate.y < doorY + 1) {
+                            isSolid = true;
                         }
                     }
 
