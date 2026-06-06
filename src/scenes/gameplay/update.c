@@ -207,16 +207,31 @@ void Ivy_Scene_GameplayUpdate(IvyGame *game)
         return;
     }
 
-    IvyDoor *door = (IvyDoor *)Ivy_ObjectManager_GetDoor(game->objectManager)->data;
-    if (IsKeyPressed(KEY_E)) {
-        if (Ivy_Door_CanInteract(door, player) && !player->movement.isMoving && player->graphics.action != PLAYER_ACTION_ATTACK) {
-            Ivy_Door_Interact(door);
-            Ivy_Door_Update(door);
+    if (IsKeyPressed(KEY_E) && !player->movement.isMoving && player->graphics.action != PLAYER_ACTION_ATTACK) {
+        int targetTileX = (int)player->movement.tilePosition.x;
+        int targetTileY = (int)player->movement.tilePosition.y;
+
+        switch (player->graphics.direction) {
+            case IVY_DIRECTION_UP:    targetTileY -= 1; break;
+            case IVY_DIRECTION_DOWN:  targetTileY += 1; break;
+            case IVY_DIRECTION_LEFT:  targetTileX -= 1; break;
+            case IVY_DIRECTION_RIGHT: targetTileX += 1; break;
+            default:                                    break;
+        }
+
+        const IvyObject *objAhead = Ivy_ObjectManager_GetObject(game->objectManager, (u8)targetTileX, (u8)targetTileY);
+
+        if (objAhead && objAhead->type == IVY_OBJECT_TYPE_DOOR && objAhead->data) {
+            IvyDoor *door = (IvyDoor *)objAhead->data;
+
+            if (Ivy_Door_CanInteract(door, player)) {
+                Ivy_Door_Interact(door);
+                Ivy_Door_Update(door);
+            }
         }
     }
 
-    Ivy_Player_Update(player, gameplayData->collusionMap, door, GetFrameTime());
-    // Ivy_Player_Update(player, gameplayData->collusionMap, NULL, GetFrameTime());
+    Ivy_Player_Update(player, gameplayData->collusionMap, game->objectManager, GetFrameTime());
 
     const Vector2 playerPosition = Ivy_Player_GetPosition(player);
     const Vector2 mapSize = Ivy_Tilemap_GetDimensions(gameplayData->tilemap);

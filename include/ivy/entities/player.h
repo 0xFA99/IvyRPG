@@ -65,7 +65,7 @@ struct IvyPlayer {
 };                                      // 664
 
 IvyPlayer      *Ivy_Player_Init(IvyArenaLinear *restrict arena, IvyAssetManager *restrict assetManager, Vector2 position);
-void            Ivy_Player_Update(IvyPlayer *restrict player, const IvyCollusionMap *restrict collisionMap, IvyDoor *restrict doors, float deltaTime);
+void            Ivy_Player_Update(IvyPlayer *restrict player, const IvyCollusionMap *restrict collisionMap, IvyObjectManager *restrict objectManager, float deltaTime);
 void            Ivy_Player_Render(const IvyPlayer *player);
 void            Ivy_Player_Unload(IvyPlayer *player);
 

@@ -13,6 +13,7 @@
 #include "ivy/systems/asset_manager.h"
 #include "ivy/systems/inventory.h"
 #include "ivy/systems/item_manager.h"
+#include "ivy/systems/render_system.h"
 #include "ivy/systems/scene_manager.h"
 #include "ivy/systems/texture_manager.h"
 #include "ivy/utils/file_ids.h"
@@ -23,20 +24,20 @@
 #include "ivy/systems/object_manager.h"
 
 enum {
-    POPUP_WIDTH  = 200,
-    POPUP_HEIGHT = 160,
+    POPUP_WIDTH             = 200,
+    POPUP_HEIGHT            = 160,
 
-    EQUIP_SLOT_COUNT = 13,
-    ITEM_LIST_COUNT  = 12,
+    EQUIP_SLOT_COUNT        = 13,
+    ITEM_LIST_COUNT         = 12,
 
-    EQUIP_SLOT_SIZE    = 24,
-    ITEM_SLOT_WIDTH    = 144,
-    ITEM_SLOT_HEIGHT   = 28,
-    OPTIONS_ITEM_ICON_SIZE     = 24,
-    ITEM_ICON_OFFSET_X = 4,
-    ITEM_ICON_OFFSET_Y = 2,
-    ITEM_TEXT_OFFSET_X = 32,
-    ITEM_FONT_SIZE     = 11
+    EQUIP_SLOT_SIZE         = 24,
+    ITEM_SLOT_WIDTH         = 144,
+    ITEM_SLOT_HEIGHT        = 28,
+    OPTIONS_ITEM_ICON_SIZE  = 24,
+    ITEM_ICON_OFFSET_X      = 4,
+    ITEM_ICON_OFFSET_Y      = 2,
+    ITEM_TEXT_OFFSET_X      = 32,
+    ITEM_FONT_SIZE          = 11
 };
 
 typedef struct {
@@ -83,8 +84,6 @@ IVY_INLINE void DrawAtlasRegion(const Texture2D *atlas, const Rectangle src, con
 void Ivy_Scene_GameplayDrawWorld(IvyGame *game)
 {
     const IvySceneGameplayData *gameplayData = game->sceneManager->actionScene->data;
-    IvyPlayer *player = (IvyPlayer *)Ivy_ObjectManager_GetPlayer(game->objectManager)->data;
-    IvyDoor *door = (IvyDoor *)Ivy_ObjectManager_GetDoor(game->objectManager)->data;
 
     BeginMode2D(gameplayData->camera.view);
 #ifdef IVY_DEBUG
@@ -95,16 +94,7 @@ void Ivy_Scene_GameplayDrawWorld(IvyGame *game)
     Ivy_Tilemap_Render(gameplayData->tilemap);
 #endif
 
-    // Test
-    const float playerPosY = player->movement.position.y;
-    const float doorPosY = door->position.y;
-    if (playerPosY > doorPosY) {
-        Ivy_Door_Draw(door);
-        Ivy_Player_Render(player);
-    } else {
-        Ivy_Player_Render(player);
-        Ivy_Door_Draw(door);
-    }
+    Ivy_RenderSystem_SortAndDraw(game->objectManager);
 
     EndMode2D();
 }

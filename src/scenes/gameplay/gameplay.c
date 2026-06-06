@@ -46,11 +46,11 @@ void Ivy_Scene_GameplayInit(IvyGame *game)
     IvyPlayer *player = (IvyPlayer *)Ivy_ObjectManager_GetPlayer(game->objectManager)->data;
 
     Ivy_ObjectManager_CreateDoor(game->objectManager, &game->arena, game->assetManager, IVY_DOOR_LEFT, (Vector2){ 4, 10 });
+    Ivy_ObjectManager_CreateDoor(game->objectManager, &game->arena, game->assetManager, IVY_DOOR_RIGHT, (Vector2){ 14, 7 });
 
     gameplayData->camera       = Ivy_Camera_Init();
     gameplayData->itemManager  = Ivy_ItemManager_Init(&game->arena, game->assetManager);
     gameplayData->state        = PAUSE_MENU_CLOSED;
-
 
     // TODO: Dont ask about this shit... just for testing lol!
     const IvyItemAttribute *shirtAttr = Ivy_ItemManager_GetAttribute(&gameplayData->itemManager, 1);

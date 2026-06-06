@@ -25,7 +25,7 @@ IvyGame Ivy_Game_Init(const Vector2 size)
     Ivy_Audio_InitDevice();
 
     // Arena
-    Ivy_Arena_LinearInit(&game.arena, 2412512);
+    Ivy_Arena_LinearInit(&game.arena, 3164992);
 
     // Save Manager
     game.saveManager = Ivy_SaveManager_Init(&game.arena, IVY_SAVE_PATH);

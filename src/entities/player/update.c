@@ -1,5 +1,6 @@
 #include "ivy/entities/player.h"
 #include "ivy/graphics/collusion.h"
+#include "ivy/systems/object_manager.h"
 #include "ivy/utils/utils.h"
 
 #define IVY_PLAYER_DIRECTION_DELAY 6
@@ -68,12 +69,10 @@ static void UpdateAttack(IvyPlayer *restrict player, const IvyCollusionMap *rest
         anim->attackFrame++;
 
         if (anim->attackFrame >= IVY_PLAYER_FRAMES) {
-            // Attack selesai
             anim->attackFrame       = 0;
             anim->attackHitApplied  = false;
             anim->attackCooldown    = IVY_PLAYER_ATTACK_COOLDOWN;
             player->graphics.action = PLAYER_ACTION_IDLE;
-            return;
         }
     }
 
@@ -117,7 +116,7 @@ static void Ivy_Player_Attack(IvyPlayer *player)
     player->graphics.action             = PLAYER_ACTION_ATTACK;
 }
 
-void Ivy_Player_Update(IvyPlayer *restrict player, const IvyCollusionMap *restrict collisionMap, IvyDoor *restrict doors, const float deltaTime)
+void Ivy_Player_Update(IvyPlayer *restrict player, const IvyCollusionMap *restrict collisionMap, IvyObjectManager *restrict objectManager, const float deltaTime)
 {
     IvyPlayerMovement *movement = &player->movement;
     IvyPlayerAnimation *animation = &player->animation;
@@ -157,12 +156,14 @@ void Ivy_Player_Update(IvyPlayer *restrict player, const IvyCollusionMap *restri
                     };
 
                     bool isSolid = collisionMap && Ivy_Collusion_IsTileSolid(collisionMap, (int)candidate.x, (int)candidate.y);
-                    if (!isSolid && Ivy_Door_IsSolid(doors)) {
-                        int doorX, doorY, doorW, doorH;
-                        Ivy_Door_GetTileRect(doors, &doorX, &doorY, &doorW, &doorH);
+                    if (!isSolid && objectManager != NULL) {
+                        const IvyObject *objAhead = Ivy_ObjectManager_GetObject(objectManager, (u8)candidate.x, (u8)candidate.y);
 
-                        if ((int)candidate.x >= doorX && (int)candidate.x < doorX + doorW && (int)candidate.y >= doorY && (int)candidate.y < doorY + 1) {
-                            isSolid = true;
+                        if (objAhead && objAhead->type == IVY_OBJECT_TYPE_DOOR && objAhead->data) {
+                            const IvyDoor *door = (IvyDoor *)objAhead->data;
+                            if (Ivy_Door_IsSolid(door)) {
+                                isSolid = true;
+                            }
                         }
                     }
 
@@ -170,7 +171,7 @@ void Ivy_Player_Update(IvyPlayer *restrict player, const IvyCollusionMap *restri
                         movement->isMoving = true;
                         movement->moveTimer = 0.0f;
                         movement->targetTile = candidate;
-                        player->graphics.action = PLAYER_ACTION_WALK; // Sesuaikan dengan enum kamu
+                        player->graphics.action = PLAYER_ACTION_WALK;
                     }
                     else {
                         player->graphics.action = PLAYER_ACTION_IDLE;

@@ -27,8 +27,11 @@ typedef struct {
 } IvyObject;
 
 struct IvyObjectManager {
-    IvyObject object[IVY_OBJECT_MAX];
-    u32 objectCount;
+    IvyObject player;
+    bool hasPlayer;
+
+    IvyObject objects[IVY_OBJECT_MAX];
+    u8 objectCount;
 };
 
 IvyObjectManager   *Ivy_ObjectManager_Init(IvyArenaLinear *arena);
@@ -43,8 +46,8 @@ void                Ivy_ObjectManager_CreateDoor(IvyObjectManager *restrict obje
                                                  IvyDoorSide side, Vector2 position);
 
 IvyObject          *Ivy_ObjectManager_GetPlayer(IvyObjectManager *objectManager);
-IvyObject          *Ivy_ObjectManager_GetDoor(IvyObjectManager *objectManager);
-
+IvyObject          *Ivy_ObjectManager_GetDoor(IvyObjectManager *objectManager, u8 doorIndex);
+IvyObject          *Ivy_ObjectManager_GetObject(IvyObjectManager *objectManager, u8 tileX, u8 tileY);
 
 #ifdef __cplusplus
 }

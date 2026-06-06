@@ -26,5 +26,6 @@ typedef struct IvyVirtualScreen IvyVirtualScreen;
 typedef struct IvyTextureManager IvyTextureManager;
 typedef struct IvyObjectManager IvyObjectManager;
 typedef struct IvyDoor IvyDoor;
+typedef struct IvyRenderSystem IvyRenderSystem;
 
 #endif
